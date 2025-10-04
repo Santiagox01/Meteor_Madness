@@ -155,7 +155,7 @@ function useSafeTexture(url?: string, fallbackColor?: string, options?: TextureO
 }
 
 function Sun() {
-  const texture = useSafeTexture(SUN_TEXTURE, "#ffffffff");
+  const texture = useSafeTexture(SUN_TEXTURE, "#0035bbff");
   return (
     <mesh>
       <sphereGeometry args={[0.5, 64, 64]} />
