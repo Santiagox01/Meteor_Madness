@@ -6,6 +6,21 @@
   NODE_VERSION = "18"
 
 [[redirects]]
+  from = "/api/neo/browse"
+  to = "/.netlify/functions/neo-browse"
+  status = 200
+
+[[redirects]]
+  from = "/api/neo/*"
+  to = "/.netlify/functions/neo-lookup"
+  status = 200
+
+[[redirects]]
+  from = "/api/usgs/elevation"
+  to = "/.netlify/functions/usgs-elevation"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
