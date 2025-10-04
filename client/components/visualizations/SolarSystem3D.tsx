@@ -5,7 +5,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DeflectionParams } from "@/lib/api";
 import { estimateDeflectionOutcome } from "@/lib/physics";
 import type { CameraMode } from "@/components/controls/TimeControls";
-import { getAsteroidPosition, getEarthPosition, SCENE_SCALE } from "@/lib/orbits";
+import { 
+  getOrbitalPosition, 
+  generateOrbitPoints, 
+  PLANETARY_ELEMENTS,
+  type OrbitalElements,
+  NASADataService
+} from "@/lib/orbits";
 
 export interface SolarSystem3DProps {
   simTimeSec: number;
@@ -15,7 +21,8 @@ export interface SolarSystem3DProps {
   showDeflection?: boolean;
   goToImpactSignal?: number;
   onImpactReached?: () => void;
-  speedFactor?: number; // NUEVO: Factor de velocidad (1, 10, 100, 1000, 10000)
+  speedFactor?: number;
+  asteroidId?: string;
 }
 
 type PlanetName =
@@ -30,38 +37,20 @@ type PlanetName =
 
 type PlanetDescriptor = {
   name: PlanetName;
-  a_au: number;
-  T_days: number;
   orbitColor: string;
   radius: number;
 };
 
 const PLANETS: PlanetDescriptor[] = [
-  { name: "Mercury", a_au: 0.39, T_days: 88, orbitColor: "#a8a29e", radius: 0.1 },
-  { name: "Venus", a_au: 0.72, T_days: 224.7, orbitColor: "#fbbf24", radius: 0.13 },
-  { name: "Earth", a_au: 1.0, T_days: 365.25, orbitColor: "#38bdf8", radius: 0.15 },
-  { name: "Mars", a_au: 1.52, T_days: 687, orbitColor: "#ef4444", radius: 0.12 },
-  { name: "Jupiter", a_au: 5.2, T_days: 4331, orbitColor: "#f59e0b", radius: 0.36 },
-  { name: "Saturn", a_au: 9.58, T_days: 10747, orbitColor: "#fde68a", radius: 0.32 },
-  { name: "Uranus", a_au: 19.2, T_days: 30589, orbitColor: "#60a5fa", radius: 0.22 },
-  { name: "Neptune", a_au: 30.05, T_days: 59800, orbitColor: "#3b82f6", radius: 0.22 },
+  { name: "Mercury", orbitColor: "#a8a29e", radius: 0.1 },
+  { name: "Venus", orbitColor: "#fbbf24", radius: 0.13 },
+  { name: "Earth", orbitColor: "#38bdf8", radius: 0.15 },
+  { name: "Mars", orbitColor: "#ef4444", radius: 0.12 },
+  { name: "Jupiter", orbitColor: "#f59e0b", radius: 0.36 },
+  { name: "Saturn", orbitColor: "#fde68a", radius: 0.32 },
+  { name: "Uranus", orbitColor: "#60a5fa", radius: 0.22 },
+  { name: "Neptune", orbitColor: "#3b82f6", radius: 0.22 },
 ];
-
-// CONSTANTES DE TIEMPO REAL
-const SECONDS_PER_DAY = 86400;
-const SECONDS_PER_HOUR = 3600;
-
-// Períodos de rotación en segundos (días sidéreos)
-const ROTATION_PERIODS: Record<PlanetName, number> = {
-  Mercury: 5068800, // 58.6 días terrestres
-  Venus: 21002400,  // 243 días terrestres (retrógrada)
-  Earth: 86164,     // 23h 56m 4s (día sidéreo)
-  Mars: 88643,      // 24h 37m 23s
-  Jupiter: 35730,   // 9h 55m 30s
-  Saturn: 38340,    // 10h 39m
-  Uranus: 62040,    // 17h 14m
-  Neptune: 57960,   // 16h 6m
-};
 
 const TEXTURE_ROOT = "https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/";
 const SUN_TEXTURE = `${TEXTURE_ROOT}sunmap.jpg`;
@@ -96,7 +85,74 @@ const PLANET_TEXTURES: Record<PlanetName, PlanetTextureSet> = {
   Neptune: { map: `${TEXTURE_ROOT}neptunemap.jpg` },
 };
 
-// ... (funciones de texturas se mantienen igual)
+type TextureOptions = {
+  colorSpace?: THREE.ColorSpace;
+  wrapS?: THREE.Wrapping;
+  wrapT?: THREE.Wrapping;
+  minFilter?: THREE.TextureFilter;
+  magFilter?: THREE.MagnificationTextureFilter;
+};
+
+function enhanceTexture(texture: THREE.Texture, options?: TextureOptions) {
+  texture.anisotropy = 8;
+  texture.colorSpace = options?.colorSpace ?? THREE.SRGBColorSpace;
+  if (options?.wrapS) texture.wrapS = options.wrapS;
+  if (options?.wrapT) texture.wrapT = options.wrapT;
+  if (options?.minFilter) texture.minFilter = options.minFilter;
+  if (options?.magFilter) texture.magFilter = options.magFilter;
+  texture.needsUpdate = true;
+}
+
+function createSolidTexture(color: string, colorSpace: THREE.ColorSpace = THREE.SRGBColorSpace) {
+  const c = new THREE.Color(color);
+  const data = new Uint8Array([
+    Math.round(c.r * 255),
+    Math.round(c.g * 255),
+    Math.round(c.b * 255),
+    255,
+  ]);
+  const texture = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
+  texture.colorSpace = colorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function useSafeTexture(url?: string, fallbackColor?: string, options?: TextureOptions) {
+  const { colorSpace, wrapS, wrapT, minFilter, magFilter } = options ?? {};
+  const fallback = useMemo(() => (fallbackColor ? createSolidTexture(fallbackColor, colorSpace ?? THREE.SRGBColorSpace) : undefined), [fallbackColor, colorSpace]);
+  const [texture, setTexture] = useState<THREE.Texture | undefined>(fallback);
+
+  useEffect(() => {
+    if (!url) {
+      setTexture(fallback);
+      return;
+    }
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+    loader.load(
+      url,
+      (loaded) => {
+        if (cancelled) return;
+        enhanceTexture(loaded, { colorSpace, wrapS, wrapT, minFilter, magFilter });
+        setTexture(loaded);
+      },
+      undefined,
+      () => {
+        if (cancelled) return;
+        console.warn(`[textures] Failed to load ${url}, using fallback.`);
+        setTexture(fallback);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [url, fallback, colorSpace, wrapS, wrapT, minFilter, magFilter]);
+
+  return texture;
+}
 
 function Sun() {
   const texture = useSafeTexture(SUN_TEXTURE, "#f5b342");
@@ -110,38 +166,84 @@ function Sun() {
 
 interface PlanetProps extends PlanetDescriptor {
   simTimeSec: number;
-  speedFactor: number; // NUEVO: Recibir factor de velocidad
+  speedFactor: number;
   setEarthPos?: (v: THREE.Vector3) => void;
 }
 
-function Planet({ a_au, T_days, orbitColor, name, simTimeSec, speedFactor, setEarthPos, radius }: PlanetProps) {
-  const groupRef = useRef<THREE.Group>(null!);
-  const r = a_au * SCENE_SCALE;
+function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius }: PlanetProps) {
+  const planetRef = useRef<THREE.Mesh>(null!);
+  const cloudsRef = useRef<THREE.Mesh>(null!);
+  const ringsRef = useRef<THREE.Mesh>(null!);
   
-  // MOVIMIENTO ORBITAL con factor de velocidad
-  const periodSeconds = T_days * SECONDS_PER_DAY;
-  const effectiveOrbitalTime = simTimeSec * speedFactor;
-  const angle = (2 * Math.PI * (effectiveOrbitalTime % periodSeconds)) / periodSeconds;
+  // Obtener elementos orbitales del planeta
+  const elements = PLANETARY_ELEMENTS[name];
   
-  const x = r * Math.cos(angle);
-  const z = r * Math.sin(angle);
+  // Generar puntos de la órbita
+  const orbitPoints = useMemo(() => {
+    return generateOrbitPoints(elements, 360);
+  }, [elements]);
+  
+  const orbitGeometry = useMemo(() => {
+    const geometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+    return geometry;
+  }, [orbitPoints]);
 
-  // ROTACIÓN con factor de velocidad y períodos reales
+  // Calcular posición actual
+  const getCurrentPosition = (timeSec: number): THREE.Vector3 => {
+    const effectiveTime = timeSec * speedFactor;
+    const orbitalPos = getOrbitalPosition(elements, effectiveTime);
+    return orbitalPos.position;
+  };
+
+  // Períodos de rotación reales en segundos
+  const ROTATION_PERIODS: Record<PlanetName, number> = {
+    Mercury: 5068800,    // 58.6 días
+    Venus: 20995200,     // 243 días (retrógrada)
+    Earth: 86164,        // 23h 56m 4s
+    Mars: 88643,         // 24h 37m 23s
+    Jupiter: 35730,      // 9h 55m 30s
+    Saturn: 38340,       // 10h 39m
+    Uranus: 62040,       // 17h 14m
+    Neptune: 57960,      // 16h 6m
+  };
+
+  // Dirección de rotación
+  const ROTATION_DIRECTIONS: Record<PlanetName, number> = {
+    Mercury: 1,
+    Venus: -1,  // Retrógrada
+    Earth: 1,
+    Mars: 1,
+    Jupiter: 1,
+    Saturn: 1,
+    Uranus: 1,
+    Neptune: 1,
+  };
+
+  // Rotación planetaria REAL
   useFrame(({ clock }) => {
-    if (groupRef.current) {
+    const delta = clock.getDelta();
+    
+    if (planetRef.current) {
       const rotationPeriod = ROTATION_PERIODS[name];
-      // Aplicar factor de velocidad a la rotación
-      const rotationSpeed = (2 * Math.PI) / rotationPeriod * speedFactor;
-      groupRef.current.rotation.y += rotationSpeed * clock.getDelta();
+      const direction = ROTATION_DIRECTIONS[name];
+      
+      // Velocidad angular REAL con factor de velocidad
+      const angularSpeed = (2 * Math.PI) / rotationPeriod * speedFactor * direction;
+      planetRef.current.rotation.y += angularSpeed * delta;
+    }
+    
+    // Rotar nubes (más rápido para efecto visual)
+    if (cloudsRef.current && name === "Earth") {
+      cloudsRef.current.rotation.y += 0.0001 * speedFactor * delta * 60;
+    }
+    
+    // Rotar anillos de Saturno
+    if (ringsRef.current && name === "Saturn") {
+      ringsRef.current.rotation.z += 0.00005 * speedFactor * delta * 60;
     }
   });
 
-  useEffect(() => {
-    if (name === "Earth" && setEarthPos) {
-      setEarthPos(new THREE.Vector3(x, 0, z));
-    }
-  }, [x, z, name, setEarthPos]);
-
+  // Texturas
   const textures = PLANET_TEXTURES[name];
   const map = useSafeTexture(textures.map, orbitColor);
   const roughnessMap = useSafeTexture(textures.roughnessMap, undefined, { colorSpace: THREE.LinearSRGBColorSpace });
@@ -158,17 +260,25 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, speedFactor, setEa
     wrapT: THREE.ClampToEdgeWrapping,
   });
 
+  // Posición actual
+  const currentPosition = getCurrentPosition(simTimeSec);
+
+  useEffect(() => {
+    if (name === "Earth" && setEarthPos) {
+      setEarthPos(currentPosition.clone());
+    }
+  }, [currentPosition, name, setEarthPos]);
+
   return (
     <group>
-      {/* Órbita visible */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[r - 0.001, r + 0.001, 256]} />
-        <meshBasicMaterial color={orbitColor} side={THREE.DoubleSide} transparent opacity={0.3} />
-      </mesh>
+      {/* Órbita elíptica real */}
+      <line geometry={orbitGeometry}>
+        <lineBasicMaterial color={orbitColor} transparent opacity={0.3} linewidth={1} />
+      </line>
       
-      {/* Planeta con rotación */}
-      <group position={[x, 0, z]} ref={groupRef}>
-        <mesh castShadow receiveShadow>
+      {/* Planeta en posición orbital actual */}
+      <group position={[currentPosition.x, currentPosition.y, currentPosition.z]}>
+        <mesh ref={planetRef} castShadow receiveShadow>
           <sphereGeometry args={[radius, 80, 80]} />
           <meshStandardMaterial
             map={map ?? undefined}
@@ -182,7 +292,7 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, speedFactor, setEa
         
         {/* Nubes para la Tierra */}
         {cloudsMap && (
-          <mesh>
+          <mesh ref={cloudsRef}>
             <sphereGeometry args={[radius * 1.015, 80, 80]} />
             <meshStandardMaterial 
               map={cloudsMap} 
@@ -196,7 +306,7 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, speedFactor, setEa
         
         {/* Anillos para Saturno */}
         {name === "Saturn" && (ringColor || ringAlpha) && (
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <mesh ref={ringsRef} rotation={[Math.PI / 2, 0, 0]}>
             <ringGeometry args={[radius * 1.6, radius * 2.4, 256]} />
             <meshBasicMaterial
               map={ringColor ?? undefined}
@@ -213,33 +323,71 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, speedFactor, setEa
   );
 }
 
-function createAsteroidGeometry() {
-  const geometry = new THREE.IcosahedronGeometry(0.08, 3);
-  const position = geometry.attributes.position as THREE.BufferAttribute;
-  const temp = new THREE.Vector3();
-  for (let i = 0; i < position.count; i++) {
-    temp.set(position.getX(i), position.getY(i), position.getZ(i));
-    const displacement = (Math.sin(temp.x * 9.7) + Math.cos(temp.y * 7.3) + Math.sin(temp.z * 5.1)) / 9 + 0.5;
-    const scale = 1 + (displacement - 0.5) * 0.35;
-    temp.multiplyScalar(scale);
-    position.setXYZ(i, temp.x, temp.y, temp.z);
-  }
-  geometry.computeVertexNormals();
-  return geometry;
+function AsteroidOrbit({ elements, deflected }: { elements: OrbitalElements; deflected: boolean }) {
+  const orbitPoints = useMemo(() => {
+    if (!elements) return [];
+    return generateOrbitPoints(elements, 180);
+  }, [elements]);
+
+  const orbitGeometry = useMemo(() => {
+    return new THREE.BufferGeometry().setFromPoints(orbitPoints);
+  }, [orbitPoints]);
+
+  if (!elements) return null;
+
+  return (
+    <line geometry={orbitGeometry}>
+      <lineBasicMaterial 
+        color={deflected ? "#22c55e" : "#f43f5e"} 
+        linewidth={2} 
+        transparent 
+        opacity={0.7} 
+      />
+    </line>
+  );
 }
 
-function Asteroid({ simTimeSec, deflected, speedFactor }: { simTimeSec: number; deflected: boolean; speedFactor: number }) {
+function Asteroid({ elements, deflected, simTimeSec, speedFactor }: { 
+  elements: OrbitalElements; 
+  deflected: boolean;
+  simTimeSec: number;
+  speedFactor: number;
+}) {
   const ref = useRef<THREE.Mesh>(null!);
-  const geometry = useMemo(() => createAsteroidGeometry(), []);
+  const geometry = useMemo(() => {
+    const geo = new THREE.IcosahedronGeometry(0.08, 3);
+    const position = geo.attributes.position as THREE.BufferAttribute;
+    const temp = new THREE.Vector3();
+    for (let i = 0; i < position.count; i++) {
+      temp.set(position.getX(i), position.getY(i), position.getZ(i));
+      const displacement = (Math.sin(temp.x * 9.7) + Math.cos(temp.y * 7.3) + Math.sin(temp.z * 5.1)) / 9 + 0.5;
+      const scale = 1 + (displacement - 0.5) * 0.35;
+      temp.multiplyScalar(scale);
+      position.setXYZ(i, temp.x, temp.y, temp.z);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
+  
   const map = useSafeTexture(ASTEROID_TEXTURE, "#b6a48b");
 
   useFrame(({ clock }) => {
-    // Aplicar factor de velocidad al asteroide también
-    const effectiveTime = simTimeSec * speedFactor;
-    const pos = getAsteroidPosition(effectiveTime, deflected);
-    ref.current.position.set(pos.x, pos.y, pos.z);
+    if (!elements || !ref.current) return;
     
-    // Rotación del asteroide con factor de velocidad
+    // Calcular posición con elementos modificados si está desviado
+    const currentElements = deflected ? 
+      { 
+        ...elements, 
+        e: Math.min(elements.e * 1.5, 0.99), // Aumentar excentricidad
+        ω: elements.ω + 10 // Cambiar argumento del perihelio
+      } : 
+      elements;
+    
+    const effectiveTime = simTimeSec * speedFactor;
+    const position = getOrbitalPosition(currentElements, effectiveTime);
+    ref.current.position.copy(position.position);
+    
+    // Rotación del asteroide
     const rotationSpeed = 0.003 * speedFactor;
     ref.current.rotation.y += rotationSpeed * clock.getDelta();
     ref.current.rotation.x += (rotationSpeed * 0.5) * clock.getDelta();
@@ -275,12 +423,46 @@ export default function SolarSystem3D({
   showDeflection, 
   goToImpactSignal, 
   onImpactReached,
-  speedFactor = 1 // VALOR POR DEFECTO: tiempo real
+  speedFactor = 1,
+  asteroidId = "433" // Eros por defecto
 }: SolarSystem3DProps) {
-  const earthPos = useRef(new THREE.Vector3(0, 0, SCENE_SCALE));
+  const earthPos = useRef(new THREE.Vector3(0, 0, 1));
   const asteroidPos = useRef(new THREE.Vector3(0, 0, 0));
   const [currentSimTime, setCurrentSimTime] = useState(simTimeSec);
+  const [asteroidElements, setAsteroidElements] = useState<OrbitalElements | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [goSeek, setGoSeek] = useState(0);
+
+  // Cargar datos del asteroide
+  useEffect(() => {
+    async function loadAsteroidData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const elements = await NASADataService.getAsteroidElements(asteroidId);
+        setAsteroidElements(elements);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error loading asteroid data');
+        console.error('Failed to load asteroid data:', err);
+        // Usar elementos de ejemplo si falla la API
+        setAsteroidElements({
+          a: 1.5,
+          e: 0.2,
+          i: 10,
+          Ω: 80,
+          ω: 60,
+          M0: 0,
+          epoch: 2451545.0,
+          period: 500
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAsteroidData();
+  }, [asteroidId]);
 
   // Sincronizar con el tiempo inicial
   useEffect(() => {
@@ -310,15 +492,19 @@ export default function SolarSystem3D({
         setCurrentSimTime(prev => prev + deltaSeconds);
       }
 
-      // Las posiciones se calculan en los componentes hijos con el factor aplicado
-      const earth = getEarthPosition(currentSimTime);
-      earthPos.current.set(earth.x, earth.y, earth.z);
+      // Actualizar posición de la Tierra
+      const earthElements = PLANETARY_ELEMENTS.Earth;
+      const earthPosition = getOrbitalPosition(earthElements, currentSimTime * speedFactor);
+      earthPos.current.copy(earthPosition.position);
 
-      const asteroid = getAsteroidPosition(currentSimTime, deflected);
-      asteroidPos.current.set(asteroid.x, asteroid.y, asteroid.z);
+      // Actualizar posición del asteroide
+      if (asteroidElements) {
+        const asteroidPosition = getOrbitalPosition(asteroidElements, currentSimTime * speedFactor);
+        asteroidPos.current.copy(asteroidPosition.position);
+      }
 
       // Detectar impacto
-      if (goSeek > 0 && playing) {
+      if (goSeek > 0 && playing && asteroidElements) {
         const d = asteroidPos.current.distanceTo(earthPos.current);
         if (d < 0.2) {
           onImpactReached?.();
@@ -330,7 +516,18 @@ export default function SolarSystem3D({
   }
 
   return (
-    <div className="h-96 w-full overflow-hidden rounded-lg bg-[#060814]">
+    <div className="h-96 w-full overflow-hidden rounded-lg bg-[#060814] relative">
+      {loading && (
+        <div className="absolute top-4 left-4 z-10 bg-black/50 text-white px-3 py-2 rounded">
+          Loading asteroid data from NASA...
+        </div>
+      )}
+      {error && (
+        <div className="absolute top-4 left-4 z-10 bg-red-500/80 text-white px-3 py-2 rounded">
+          {error}
+        </div>
+      )}
+      
       <Canvas camera={{ position: [8, 5, 9], fov: 55 }} shadows>
         <ambientLight intensity={0.35} />
         <pointLight position={[0, 0, 0]} intensity={1.8} decay={1.2} />
@@ -339,7 +536,7 @@ export default function SolarSystem3D({
         
         <Sun />
         
-        {/* Planetas con factor de velocidad aplicado */}
+        {/* Planetas con órbitas reales */}
         {PLANETS.map((planet) => (
           <Planet
             key={planet.name}
@@ -352,11 +549,19 @@ export default function SolarSystem3D({
           />
         ))}
         
-        <Asteroid 
-          simTimeSec={currentSimTime} 
-          deflected={deflected} 
-          speedFactor={speedFactor} 
-        />
+        {/* Asteroide y su órbita */}
+        {asteroidElements && (
+          <>
+            <AsteroidOrbit elements={asteroidElements} deflected={deflected} />
+            <Asteroid 
+              elements={asteroidElements} 
+              deflected={deflected} 
+              simTimeSec={currentSimTime}
+              speedFactor={speedFactor}
+            />
+          </>
+        )}
+        
         <CameraController cameraMode={cameraMode} getTargets={getTargets} />
         <Updaters />
         <OrbitControls enablePan={false} enabled={cameraMode === "free"} />
