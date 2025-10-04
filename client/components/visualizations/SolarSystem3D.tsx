@@ -164,14 +164,33 @@ interface PlanetProps extends PlanetDescriptor {
 }
 
 function Planet({ a_au, T_days, orbitColor, name, simTimeSec, setEarthPos, radius }: PlanetProps) {
+  const groupRef = useRef<THREE.Group>(null!);
   const r = a_au * SCENE_SCALE;
-  const period = T_days * 86400;
+  
+  // ACELERAR EL MOVIMIENTO ORBITAL - AÑADIR FACTOR DE VELOCIDAD
+  const speedFactor = 365; // 1 año real = 1 segundo de simulación
+  const period = (T_days * 86400) / speedFactor;
   const angle = (2 * Math.PI * (simTimeSec % period)) / period;
+  
   const x = r * Math.cos(angle);
   const z = r * Math.sin(angle);
 
+  // AÑADIR ROTACIÓN SOBRE SU PROPIO EJE
+  useFrame(() => {
+    if (groupRef.current) {
+      // Rotación planetaria - más rápido para planetas interiores
+      const rotationSpeed = name === "Mercury" ? 0.02 : 
+                           name === "Venus" ? 0.015 :
+                           name === "Earth" ? 0.01 :
+                           name === "Mars" ? 0.008 : 0.005;
+      groupRef.current.rotation.y += rotationSpeed;
+    }
+  });
+
   useEffect(() => {
-    if (name === "Earth" && setEarthPos) setEarthPos(new THREE.Vector3(x, 0, z));
+    if (name === "Earth" && setEarthPos) {
+      setEarthPos(new THREE.Vector3(x, 0, z));
+    }
   }, [x, z, name, setEarthPos]);
 
   const textures = PLANET_TEXTURES[name];
@@ -192,11 +211,14 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, setEarthPos, radiu
 
   return (
     <group>
+      {/* Órbita visible */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[r - 0.001, r + 0.001, 256]} />
         <meshBasicMaterial color={orbitColor} side={THREE.DoubleSide} transparent opacity={0.3} />
       </mesh>
-      <group position={[x, 0, z]}>
+      
+      {/* Planeta con rotación */}
+      <group position={[x, 0, z]} ref={groupRef}>
         <mesh castShadow receiveShadow>
           <sphereGeometry args={[radius, 80, 80]} />
           <meshStandardMaterial
@@ -208,12 +230,22 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, setEarthPos, radiu
             color={!map ? orbitColor : undefined}
           />
         </mesh>
+        
+        {/* Nubes para la Tierra */}
         {cloudsMap && (
           <mesh>
             <sphereGeometry args={[radius * 1.015, 80, 80]} />
-            <meshStandardMaterial map={cloudsMap} transparent opacity={0.8} depthWrite={false} />
+            <meshStandardMaterial 
+              map={cloudsMap} 
+              transparent 
+              opacity={0.8} 
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
           </mesh>
         )}
+        
+        {/* Anillos para Saturno */}
         {name === "Saturn" && (ringColor || ringAlpha) && (
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <ringGeometry args={[radius * 1.6, radius * 2.4, 256]} />
@@ -223,6 +255,7 @@ function Planet({ a_au, T_days, orbitColor, name, simTimeSec, setEarthPos, radiu
               transparent
               opacity={0.9}
               side={THREE.DoubleSide}
+              depthWrite={false}
             />
           </mesh>
         )}
@@ -296,17 +329,21 @@ export default function SolarSystem3D({ simTimeSec, playing, cameraMode, deflect
 
   function Updaters() {
     useFrame(({ clock }) => {
-      const t = simTimeSec + clock.getElapsedTime() * 0;
-      const asteroid = getAsteroidPosition(t, deflected);
-      asteroidPos.current.set(asteroid.x, asteroid.y, asteroid.z);
-
+      const t = simTimeSec + (playing ? clock.getElapsedTime() : 0);
+      
+      // Actualizar posición de la Tierra
       const earth = getEarthPosition(t);
       earthPos.current.set(earth.x, earth.y, earth.z);
 
+      // Actualizar posición del asteroide
+      const asteroid = getAsteroidPosition(t, deflected);
+      asteroidPos.current.set(asteroid.x, asteroid.y, asteroid.z);
+
+      // Detectar impacto
       if (goSeek > 0 && playing) {
         const d = asteroidPos.current.distanceTo(earthPos.current);
         if (d < 0.2) {
-          onImpactReached && onImpactReached();
+          onImpactReached?.();
           setGoSeek(0);
         }
       }
@@ -321,17 +358,21 @@ export default function SolarSystem3D({ simTimeSec, playing, cameraMode, deflect
         <pointLight position={[0, 0, 0]} intensity={1.8} decay={1.2} />
         <directionalLight position={[6, 6, 4]} intensity={0.6} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
         <Stars radius={80} depth={40} count={7000} factor={2} saturation={0} fade speed={0.5} />
+        
         <Sun />
+        
+        {/* Planetas orbitando alrededor del Sol */}
         {PLANETS.map((planet) => (
           <Planet
             key={planet.name}
             {...planet}
-            simTimeSec={simTimeSec}
+            simTimeSec={simTimeSec + (playing ? performance.now() * 0.001 : 0)}
             setEarthPos={(vector: THREE.Vector3) => {
               if (planet.name === "Earth") earthPos.current.copy(vector);
             }}
           />
         ))}
+        
         <Asteroid simTimeSec={simTimeSec} deflected={deflected} />
         <CameraController cameraMode={cameraMode} getTargets={getTargets} />
         <Updaters />
