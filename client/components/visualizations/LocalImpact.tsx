@@ -107,7 +107,6 @@ function EntryStreak({ center, angleDeg, slowMotion }: { center: THREE.Vector3; 
   const normal = useMemo(() => center.clone().normalize(), [center]);
   const baseDirection = useMemo(() => {
     const approach = center.clone().normalize().multiplyScalar(-1).applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.25);
-    const up = new THREE.Vector3(0, 1, 0);
     const axis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 0, 1), normal).normalize();
     if (!Number.isFinite(axis.length()) || axis.length() === 0) {
       return approach;
@@ -152,9 +151,9 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
         <Stars radius={50} depth={30} count={5000} factor={2} saturation={0} fade speed={0.5} />
         <Earth />
         <ImpactRings center={impactCenter} craterR={craterRadiusKm} severeR={severeRadiusKm} moderateR={moderateRadiusKm} />
-        <DynamicWave center={impactCenter} baseRadiusKm={severeRadiusKm} color="#60a5fa" slowMotion={slowMotion} />
-        {isOcean && <DynamicWave center={impactCenter} baseRadiusKm={moderateRadiusKm * 1.2} color="#22d3ee" slowMotion={slowMotion} />}
-        <EntryStreak center={impactCenter} angleDeg={35} slowMotion={slowMotion} />
+        <DynamicWave center={impactCenter} baseRadiusKm={severeRadiusKm} color="#60a5fa" slowMotion={slowMotion ?? false} />
+        {isOcean && <DynamicWave center={impactCenter} baseRadiusKm={moderateRadiusKm * 1.2} color="#22d3ee" slowMotion={slowMotion ?? false} />}
+        <EntryStreak center={impactCenter} angleDeg={35} slowMotion={slowMotion ?? false} />
         <OrbitControls enablePan={false} />
       </Canvas>
     </div>

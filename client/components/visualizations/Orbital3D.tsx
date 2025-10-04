@@ -2,7 +2,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { DeflectionParams } from "@shared/api";
+import type { DeflectionParams } from "@/lib/api";
 import { estimateDeflectionOutcome } from "@/lib/physics";
 
 export interface Orbital3DProps {

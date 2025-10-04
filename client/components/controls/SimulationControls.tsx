@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { AsteroidParams, DeflectionParams } from "@shared/api";
+import type { AsteroidParams, DeflectionParams } from "@/lib/api";
 
 export interface SimulationControlsProps {
   params: AsteroidParams;

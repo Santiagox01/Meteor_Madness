@@ -7,7 +7,7 @@ import MetricsPanel from "@/components/panels/MetricsPanel";
 import SolarSystem3D from "@/components/visualizations/SolarSystem3D";
 import LocalImpact from "@/components/visualizations/LocalImpact";
 import { fetchNeoBrowse, fetchNeoById, fetchElevation } from "@/lib/api";
-import type { AsteroidParams, DeflectionParams } from "@shared/api";
+import type { AsteroidParams, DeflectionParams } from "@/lib/api";
 import { estimateDeflectionOutcome, runImpactModel } from "@/lib/physics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
