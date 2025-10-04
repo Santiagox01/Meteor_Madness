@@ -46,6 +46,13 @@ const PLANETS: PlanetDescriptor[] = [
   { name: "Neptune", a_au: 30.05, T_days: 59800, orbitColor: "#3b82f6", radius: 0.22 },
 ];
 
+// CONSTANTES DE TIEMPO
+const SECONDS_PER_DAY = 86400;
+const DAYS_PER_YEAR = 365.25;
+
+// Factor para simulación - 1 segundo real = 1 día de simulación (para hacer visible el movimiento)
+const SIMULATION_TIME_FACTOR = SECONDS_PER_DAY; // 1 seg real = 1 día sim
+
 const TEXTURE_ROOT = "https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/";
 const SUN_TEXTURE = `${TEXTURE_ROOT}sunmap.jpg`;
 const ASTEROID_TEXTURE = `${TEXTURE_ROOT}moonmap1k.jpg`;
@@ -159,31 +166,37 @@ function Sun() {
 }
 
 interface PlanetProps extends PlanetDescriptor {
-  simTimeSec: number;
+  simulationTimeDays: number; // Cambiamos a días para mayor precisión
   setEarthPos?: (v: THREE.Vector3) => void;
 }
 
-function Planet({ a_au, T_days, orbitColor, name, simTimeSec, setEarthPos, radius }: PlanetProps) {
+function Planet({ a_au, T_days, orbitColor, name, simulationTimeDays, setEarthPos, radius }: PlanetProps) {
   const groupRef = useRef<THREE.Group>(null!);
   const r = a_au * SCENE_SCALE;
   
-  // ACELERAR EL MOVIMIENTO ORBITAL - AÑADIR FACTOR DE VELOCIDAD
-  const speedFactor = 365; // 1 año real = 1 segundo de simulación
-  const period = (T_days * 86400) / speedFactor;
-  const angle = (2 * Math.PI * (simTimeSec % period)) / period;
+  // ESCALA REAL: 1 día simulación = 1 día real
+  // Los períodos orbitales están en días terrestres
+  const period = T_days; // Período en días (escala real)
+  const angle = (2 * Math.PI * (simulationTimeDays % period)) / period;
   
   const x = r * Math.cos(angle);
   const z = r * Math.sin(angle);
 
-  // AÑADIR ROTACIÓN SOBRE SU PROPIO EJE
+  // Rotación sobre su propio eje (días sidéreos aproximados)
   useFrame(() => {
     if (groupRef.current) {
-      // Rotación planetaria - más rápido para planetas interiores
-      const rotationSpeed = name === "Mercury" ? 0.02 : 
-                           name === "Venus" ? 0.015 :
-                           name === "Earth" ? 0.01 :
-                           name === "Mars" ? 0.008 : 0.005;
-      groupRef.current.rotation.y += rotationSpeed;
+      // Velocidades de rotación reales aproximadas
+      const rotationSpeeds: Record<PlanetName, number> = {
+        Mercury: 0.008,   // 58.6 días terrestres para una rotación
+        Venus: 0.004,     // 243 días terrestres (rotación retrógrada)
+        Earth: 0.06,      // 1 día
+        Mars: 0.055,      // 1.03 días
+        Jupiter: 0.15,    // 9.9 horas
+        Saturn: 0.12,     // 10.7 horas  
+        Uranus: 0.09,     // 17.2 horas
+        Neptune: 0.08,    // 16.1 horas
+      };
+      groupRef.current.rotation.y += rotationSpeeds[name] || 0.05;
     }
   });
 
@@ -279,12 +292,14 @@ function createAsteroidGeometry() {
   return geometry;
 }
 
-function Asteroid({ simTimeSec, deflected }: { simTimeSec: number; deflected: boolean }) {
+function Asteroid({ simulationTimeDays, deflected }: { simulationTimeDays: number; deflected: boolean }) {
   const ref = useRef<THREE.Mesh>(null!);
   const geometry = useMemo(() => createAsteroidGeometry(), []);
   const map = useSafeTexture(ASTEROID_TEXTURE, "#b6a48b");
 
   useFrame(() => {
+    // Convertir días a segundos para las funciones existentes
+    const simTimeSec = simulationTimeDays * SECONDS_PER_DAY;
     const pos = getAsteroidPosition(simTimeSec, deflected);
     ref.current.position.set(pos.x, pos.y, pos.z);
     ref.current.rotation.y += 0.003;
@@ -316,7 +331,13 @@ function CameraController({ cameraMode, getTargets }: { cameraMode: CameraMode; 
 export default function SolarSystem3D({ simTimeSec, playing, cameraMode, deflection, showDeflection, goToImpactSignal, onImpactReached }: SolarSystem3DProps) {
   const earthPos = useRef(new THREE.Vector3(0, 0, SCENE_SCALE));
   const asteroidPos = useRef(new THREE.Vector3(0, 0, 0));
+  const [simulationTimeDays, setSimulationTimeDays] = useState(0);
   const [goSeek, setGoSeek] = useState(0);
+
+  // Convertir tiempo inicial de segundos a días
+  useEffect(() => {
+    setSimulationTimeDays(simTimeSec / SECONDS_PER_DAY);
+  }, [simTimeSec]);
 
   useEffect(() => {
     if (goToImpactSignal) setGoSeek((n) => n + 1);
@@ -328,15 +349,28 @@ export default function SolarSystem3D({ simTimeSec, playing, cameraMode, deflect
   const getTargets = () => ({ earth: earthPos.current, asteroid: asteroidPos.current });
 
   function Updaters() {
-    useFrame(({ clock }) => {
-      const t = simTimeSec + (playing ? clock.getElapsedTime() : 0);
+    const startTimeRef = useRef(performance.now());
+    
+    useFrame(() => {
+      const now = performance.now();
+      const deltaTimeMs = now - startTimeRef.current;
+      startTimeRef.current = now;
+
+      if (playing) {
+        // 1 segundo real = 1 día de simulación (para hacer visible el movimiento)
+        const deltaDays = (deltaTimeMs / 1000) * (SECONDS_PER_DAY / SIMULATION_TIME_FACTOR);
+        setSimulationTimeDays(prev => prev + deltaDays);
+      }
+
+      // Convertir días a segundos para las funciones existentes
+      const simTimeSec = simulationTimeDays * SECONDS_PER_DAY;
       
       // Actualizar posición de la Tierra
-      const earth = getEarthPosition(t);
+      const earth = getEarthPosition(simTimeSec);
       earthPos.current.set(earth.x, earth.y, earth.z);
 
       // Actualizar posición del asteroide
-      const asteroid = getAsteroidPosition(t, deflected);
+      const asteroid = getAsteroidPosition(simTimeSec, deflected);
       asteroidPos.current.set(asteroid.x, asteroid.y, asteroid.z);
 
       // Detectar impacto
@@ -361,19 +395,19 @@ export default function SolarSystem3D({ simTimeSec, playing, cameraMode, deflect
         
         <Sun />
         
-        {/* Planetas orbitando alrededor del Sol */}
+        {/* Planetas con escala de tiempo real */}
         {PLANETS.map((planet) => (
           <Planet
             key={planet.name}
             {...planet}
-            simTimeSec={simTimeSec + (playing ? performance.now() * 0.001 : 0)}
+            simulationTimeDays={simulationTimeDays}
             setEarthPos={(vector: THREE.Vector3) => {
               if (planet.name === "Earth") earthPos.current.copy(vector);
             }}
           />
         ))}
         
-        <Asteroid simTimeSec={simTimeSec} deflected={deflected} />
+        <Asteroid simulationTimeDays={simulationTimeDays} deflected={deflected} />
         <CameraController cameraMode={cameraMode} getTargets={getTargets} />
         <Updaters />
         <OrbitControls enablePan={false} enabled={cameraMode === "free"} />
