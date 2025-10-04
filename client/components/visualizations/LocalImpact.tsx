@@ -30,7 +30,7 @@ function Earth() {
   return (
     <mesh>
       <sphereGeometry args={[1, 64, 64]} />
-      <meshPhongMaterial color={new THREE.Color("#0b132b")} emissive={new THREE.Color("#0b122a")} shininess={10} />
+      <meshPhongMaterial color={new THREE.Color("#00ffd5ff")} emissive={new THREE.Color("#ff00bbff")} shininess={10} />
     </mesh>
   );
 }
