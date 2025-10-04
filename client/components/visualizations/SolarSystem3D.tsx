@@ -2,7 +2,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DeflectionParams } from "@shared/api";
+import type { DeflectionParams } from "@/lib/api";
 import { estimateDeflectionOutcome } from "@/lib/physics";
 import type { CameraMode } from "@/components/controls/TimeControls";
 import { getAsteroidPosition, getEarthPosition, SCENE_SCALE } from "@/lib/orbits";
@@ -84,7 +84,7 @@ type TextureOptions = {
   wrapS?: THREE.Wrapping;
   wrapT?: THREE.Wrapping;
   minFilter?: THREE.TextureFilter;
-  magFilter?: THREE.TextureFilter;
+  magFilter?: THREE.MagnificationTextureFilter;
 };
 
 function enhanceTexture(texture: THREE.Texture, options?: TextureOptions) {

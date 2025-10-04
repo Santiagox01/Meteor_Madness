@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { BookOpenCheck, GraduationCap, Globe2, Activity, Waves, ThermometerSun, Rocket, Shield, Brain } from "lucide-react";
+import { BookOpenCheck, GraduationCap, Globe2, Activity, Waves, Rocket, Shield, Brain } from "lucide-react";
 
 const topics = [
   {

@@ -1,6 +1,19 @@
-import type { AsteroidParams, DeflectionParams, SimulationResult } from "@shared/api";
+import type { AsteroidParams, DeflectionParams } from "@/lib/api";
 
-const G = 9.80665; // m/s^2
+// Add missing type
+export interface SimulationResult {
+  outcome: string;
+  successProbability: number;
+  deflectionAngle: number;
+  massKg: number;
+  kineticEnergyJ: number;
+  tntMegatons: number;
+  craterDiameterKm: number;
+  blast5psiRadiusKm: number;
+  lightDamageRadiusKm: number;
+  estSeismicMagnitude: number;
+  torinoScale: number;
+}
 
 export function toRadians(deg: number) {
   return (deg * Math.PI) / 180;
@@ -79,6 +92,9 @@ export function runImpactModel(params: AsteroidParams): SimulationResult {
   const estSeismicMagnitude = estimateSeismicMagnitude(E);
   const torinoScale = torinoScaleFromEnergyMt(Y_mt);
   return {
+    outcome: "impact",
+    successProbability: 1.0,
+    deflectionAngle: 0,
     massKg,
     kineticEnergyJ: E,
     tntMegatons: Y_mt,
