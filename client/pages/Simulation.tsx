@@ -26,17 +26,18 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function useQueryParams() {
   const [params] = useSearchParams();
   return Object.fromEntries(params.entries());
 }
 
-function formatDuration(hours: number) {
-  if (!Number.isFinite(hours) || hours <= 0) return "Inminente";
-  if (hours < 24) return `${hours.toFixed(1)} h`;
+function formatDuration(hours: number, t: any) {
+  if (!Number.isFinite(hours) || hours <= 0) return t.imminent;
+  if (hours < 24) return `${hours.toFixed(1)} ${t.hours}`;
   const days = hours / 24;
-  return `${days.toFixed(1)} días`;
+  return `${days.toFixed(1)} ${t.days}`;
 }
 
 type TelemetryCardSpec = {
@@ -48,6 +49,7 @@ type TelemetryCardSpec = {
 
 export default function Simulation() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const queryParams = useQueryParams();
   const [params, setParams] = useState<AsteroidParams>({
     name: "Impactor-2025",
@@ -176,41 +178,41 @@ export default function Simulation() {
 
   const metrics = useMemo(
     () => [
-      { label: "Energy", value: `${(impact.kineticEnergyJ / 1e18).toFixed(3)} EJ` },
-      { label: "Yield", value: `${impact.tntMegatons.toFixed(1)} Mt` },
-      { label: "Crater", value: `${impact.craterDiameterKm.toFixed(1)} km` },
-      { label: "Blast 5 psi", value: `${impact.blast5psiRadiusKm.toFixed(1)} km` },
-      { label: "Luz / daño", value: `${impact.lightDamageRadiusKm.toFixed(1)} km` },
-      { label: "Magnitud sísmica", value: `${impact.estSeismicMagnitude.toFixed(1)}` },
-      { label: "Masa", value: `${(impact.massKg / 1e9).toFixed(2)} Gt` },
-      { label: "Escala Torino", value: `${impact.torinoScale} / 10` },
+      { label: t.energy, value: `${(impact.kineticEnergyJ / 1e18).toFixed(3)} ${t.exajoules}` },
+      { label: t.yield, value: `${impact.tntMegatons.toFixed(1)} ${t.megatons}` },
+      { label: t.crater, value: `${impact.craterDiameterKm.toFixed(1)} ${t.km}` },
+      { label: t.blastRadius, value: `${impact.blast5psiRadiusKm.toFixed(1)} ${t.km}` },
+      { label: t.lightDamage, value: `${impact.lightDamageRadiusKm.toFixed(1)} ${t.km}` },
+      { label: t.seismicMagnitude, value: `${impact.estSeismicMagnitude.toFixed(1)}` },
+      { label: t.mass, value: `${(impact.massKg / 1e9).toFixed(2)} ${t.gigatons}` },
+      { label: t.torinoScale, value: `${impact.torinoScale} / 10` },
     ],
-    [impact],
+    [impact, t],
   );
 
   const telemetryCards: TelemetryCardSpec[] = [
     {
-      title: "Distancia Asteroide–Tierra",
-      value: `${telemetry.distanceLD.toFixed(2)} LD`,
-      sub: `${telemetry.distanceKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} km`,
+      title: t.asteroidEarthDistance,
+      value: `${telemetry.distanceLD.toFixed(2)} ${t.lunarDistances}`,
+      sub: `${telemetry.distanceKm.toLocaleString(t.language === 'es' ? "es-ES" : "en-US", { maximumFractionDigits: 0 })} ${t.km}`,
       icon: Orbit,
     },
     {
-      title: "Velocidad relativa",
-      value: `${telemetry.relativeSpeed.toFixed(2)} km/s`,
-      sub: `${(telemetry.relativeSpeed * 3600).toFixed(0)} km/h`,
+      title: t.relativeVelocity,
+      value: `${telemetry.relativeSpeed.toFixed(2)} ${t.kmPerS}`,
+      sub: `${(telemetry.relativeSpeed * 3600).toFixed(0)} ${t.kmPerH}`,
       icon: GaugeCircle,
     },
     {
-      title: "ETA aproximada",
-      value: formatDuration(telemetry.etaHours),
-      sub: "Tiempo para cruce orbital",
+      title: t.estimatedArrival,
+      value: formatDuration(telemetry.etaHours, t),
+      sub: t.orbitalCrossingTime,
       icon: Timer,
     },
     {
-      title: "Mitigación",
-      value: deflectionOutcome.avoidsImpact ? "Desvío logrado" : "Impacto probable",
-      sub: `Δv ${deflection.deltaVMS.toFixed(1)} m/s · Shift ${deflectionOutcome.alongTrackShiftKm.toFixed(0)} km`,
+      title: t.mitigation,
+      value: deflectionOutcome.avoidsImpact ? t.avoidanceAchieved : t.impactLikely,
+      sub: `Δv ${deflection.deltaVMS.toFixed(1)} ${t.mPerS} · ${t.shift} ${deflectionOutcome.alongTrackShiftKm.toFixed(0)} ${t.km}`,
       icon: ShieldCheck,
     },
   ];
@@ -238,18 +240,18 @@ export default function Simulation() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-1 text-xs uppercase tracking-[0.3em] text-primary">
-              🌍 Simulación Orbital
+              🌍 {t.orbitalSimulation}
             </div>
-            <h1 className="text-4xl lg:text-5xl font-bold glow-text">Centro de Trayectorias · Impactor-2025</h1>
+            <h1 className="text-4xl lg:text-5xl font-bold glow-text">{t.trajectoryCenter}</h1>
             <p className="text-muted-foreground">
-              Controla la simulación heliocéntrica, ajusta el asteroide y evalúa mitigaciones en tiempo real. Conecta los resultados con el Centro de Misión para emitir órdenes.
+              {t.simulationDescription}
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <Button variant="outline" className="border-primary/40 text-primary hover:bg-primary/20" onClick={() => setGoToImpactSignal((x) => x + 1)}>
-              Ir al impacto
+              {t.goToImpact}
             </Button>
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate("/mission")}>Enviar a misión</Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => navigate("/mission")}>{t.sendToMission}</Button>
           </div>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -262,29 +264,29 @@ export default function Simulation() {
       <section className="space-panel rounded-3xl p-6">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2 text-primary">
-            <SatelliteDish className="h-5 w-5" /> Cargar asteroide
+            <SatelliteDish className="h-5 w-5" /> {t.loadAsteroid}
           </div>
           <select
             className="h-10 rounded-md border border-primary/40 bg-card/60 px-3 text-sm"
             value={queryParams.neo ?? ""}
             onChange={(e) => loadPreset(e.target.value)}
           >
-            <option value="">Seleccionar NEO (NASA)</option>
+            <option value="">{t.selectNEO}</option>
             {presets.map((neo: any) => (
               <option key={neo.id} value={neo.id}>
-                {neo.name} · {(neo.estimated_diameter?.meters?.estimated_diameter_max ?? 0).toFixed(0)} m
+                {neo.name} · {(neo.estimated_diameter?.meters?.estimated_diameter_max ?? 0).toFixed(0)} {t.meters}
               </option>
             ))}
           </select>
           <div className="flex items-center gap-2">
             <Switch id="slow-motion" checked={slowMotion} onCheckedChange={setSlowMotion} />
             <Label htmlFor="slow-motion" className="text-sm text-muted-foreground">
-              Reproducción cámara lenta local
+              {t.slowMotionPlayback}
             </Label>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-primary/40 text-primary">
-              <Sparkles className="h-3 w-3 mr-1" /> Escala Torino {impact.torinoScale}
+              <Sparkles className="h-3 w-3 mr-1" /> {t.torinoScale} {impact.torinoScale}
             </Badge>
           </div>
         </div>
@@ -347,24 +349,24 @@ export default function Simulation() {
             <Card className="space-panel">
               <CardHeader>
                 <CardTitle className="text-base text-foreground flex items-center gap-2">
-                  <Mountain className="h-4 w-4 text-primary" /> Elevación del impacto
+                  <Mountain className="h-4 w-4 text-primary" /> {t.impactElevation}
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                {elevation.value?.USGS_Elevation_Point_Query_Service?.Elevation?.toFixed?.(1)} metros sobre el nivel del mar.
+                {elevation.value?.USGS_Elevation_Point_Query_Service?.Elevation?.toFixed?.(1)} {t.metersAboveSeaLevel}
               </CardContent>
             </Card>
           )}
           <Card className="space-panel">
             <CardHeader>
               <CardTitle className="text-base text-foreground flex items-center gap-2">
-                <ArrowBigRightDash className="h-4 w-4 text-primary" /> Flujo operativo
+                <ArrowBigRightDash className="h-4 w-4 text-primary" /> {t.operationalFlow}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>1. Ajusta parámetros y estrategias de desviación.</p>
-              <p>2. Analiza telemetría orbital y efectos locales.</p>
-              <p>3. Envía el escenario al Centro de Misión para generar un plan de mitigación formal.</p>
+              <p>1. {t.operationalStep1}</p>
+              <p>2. {t.operationalStep2}</p>
+              <p>3. {t.operationalStep3}</p>
             </CardContent>
           </Card>
         </div>
@@ -374,12 +376,14 @@ export default function Simulation() {
 }
 
 function TelemetrySummaryCard({ icon: Icon, title, value, sub }: TelemetryCardSpec) {
+  const { t } = useLanguage();
+  
   return (
     <Card className="space-panel h-full">
       <CardHeader className="flex flex-row items-center justify-between gap-4 pb-0">
         <div className="space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-foreground/70">
-            Telemetría
+            {t.telemetry}
           </p>
           <CardTitle className="text-base font-semibold tracking-normal text-foreground">
             {title}
