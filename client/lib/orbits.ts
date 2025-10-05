@@ -412,7 +412,7 @@ export class NASADataService {
   /**
    * Parsea elementos orbitales de la respuesta de Horizons
    */
-  private static parseHorizonsElements(data: any, asteroidId: string): OrbitalElements {
+  private static parseHorizonsElements(_data: any, asteroidId: string): OrbitalElements {
     // Esta implementación asume el formato de respuesta de Horizons
     // En práctica, necesitaríamos parsear el texto específico de la respuesta
     
