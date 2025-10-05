@@ -35,16 +35,16 @@ type PlanetName =
   | "Uranus"
   | "Neptune";
 
-// Radios reales en escala visual (proporcionales pero visibles)
+// Radios planetarios en escala real proporcional (Earth = 0.1 como referencia)
 const PLANET_RADII: Record<PlanetName, number> = {
-  Mercury: 0.04,   // Más pequeño
-  Venus: 0.09,     // Similar a Tierra
-  Earth: 0.1,      // Referencia
-  Mars: 0.06,      // Más pequeño que Tierra
-  Jupiter: 0.3,    // Mucho más grande
-  Saturn: 0.25,    // Grande pero menor que Júpiter
-  Uranus: 0.15,    // Mediano
-  Neptune: 0.14,   // Similar a Urano
+  Mercury: 0.038,  // 0.383 × 0.1 (38.3% del tamaño de la Tierra)
+  Venus: 0.095,    // 0.949 × 0.1 (94.9% del tamaño de la Tierra)
+  Earth: 0.1,      // Referencia (100%)
+  Mars: 0.053,     // 0.532 × 0.1 (53.2% del tamaño de la Tierra)
+  Jupiter: 1.12,   // 11.21 × 0.1 (11.21 veces la Tierra)
+  Saturn: 0.95,    // 9.45 × 0.1 (9.45 veces la Tierra)
+  Uranus: 0.40,    // 4.01 × 0.1 (4.01 veces la Tierra)
+  Neptune: 0.39,   // 3.88 × 0.1 (3.88 veces la Tierra)
 };
 
 const PLANET_COLORS: Record<PlanetName, string> = {
@@ -91,10 +91,38 @@ const PLANET_TEXTURES: Record<PlanetName, PlanetTextureSet> = {
   Neptune: { map: `${TEXTURE_ROOT}neptunemap.jpg` },
 };
 
-// ... (mantener las funciones de texturas igual: enhanceTexture, createSolidTexture, useSafeTexture)
+// Hook para cargar texturas de forma segura con fallback
+function useSafeTexture(url?: string, options?: { colorSpace?: THREE.ColorSpace; wrapS?: THREE.Wrapping; wrapT?: THREE.Wrapping }) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  
+  useEffect(() => {
+    if (!url) {
+      setTexture(null);
+      return;
+    }
+    
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      url,
+      (loadedTexture) => {
+        if (options?.colorSpace) loadedTexture.colorSpace = options.colorSpace;
+        if (options?.wrapS) loadedTexture.wrapS = options.wrapS;
+        if (options?.wrapT) loadedTexture.wrapT = options.wrapT;
+        setTexture(loadedTexture);
+      },
+      undefined,
+      (error) => {
+        console.warn(`Failed to load texture: ${url}`, error);
+        setTexture(null);
+      }
+    );
+  }, [url, options?.colorSpace, options?.wrapS, options?.wrapT]);
+  
+  return texture;
+}
 
 function Sun() {
-  const texture = useSafeTexture(SUN_TEXTURE, "#f5b342");
+  const texture = useSafeTexture(SUN_TEXTURE);
   return (
     <mesh>
       <sphereGeometry args={[0.5, 64, 64]} />
@@ -103,17 +131,19 @@ function Sun() {
   );
 }
 
-// Componente simple para etiquetas
-function PlanetLabel({ name, position, visible }: { name: string; position: THREE.Vector3; visible: boolean }) {
+// Componente mejorado para etiquetas de planetas
+function PlanetLabel({ name, position, visible, radius }: { name: string; position: THREE.Vector3; visible: boolean; radius: number }) {
   if (!visible) return null;
 
   return (
     <Text
-      position={[position.x, position.y + 0.2, position.z]}
-      fontSize={0.15}
+      position={[position.x, position.y + radius + 0.3, position.z]}
+      fontSize={0.12}
       color="white"
       anchorX="center"
       anchorY="middle"
+      outlineWidth={0.02}
+      outlineColor="black"
     >
       {name}
     </Text>
@@ -141,10 +171,6 @@ function Planet({ name, simTimeSec, speedFactor, setEarthPos }: PlanetProps) {
   const orbitPoints = useMemo(() => {
     return generateOrbitPoints(elements, 360);
   }, [elements]);
-  
-  const orbitGeometry = useMemo(() => {
-    return new THREE.BufferGeometry().setFromPoints(orbitPoints);
-  }, [orbitPoints]);
 
   // Calcular posición actual
   const getCurrentPosition = (timeSec: number): THREE.Vector3 => {
@@ -176,16 +202,16 @@ function Planet({ name, simTimeSec, speedFactor, setEarthPos }: PlanetProps) {
 
   // Texturas
   const textures = PLANET_TEXTURES[name];
-  const map = useSafeTexture(textures.map, orbitColor);
-  const roughnessMap = useSafeTexture(textures.roughnessMap, undefined, { colorSpace: THREE.LinearSRGBColorSpace });
-  const specularMap = useSafeTexture(textures.specularMap, undefined, { colorSpace: THREE.LinearSRGBColorSpace });
-  const cloudsMap = useSafeTexture(textures.clouds, undefined, { colorSpace: THREE.SRGBColorSpace });
-  const ringColor = useSafeTexture(textures.ringColor, orbitColor, {
+  const map = useSafeTexture(textures.map);
+  const roughnessMap = useSafeTexture(textures.roughnessMap, { colorSpace: THREE.LinearSRGBColorSpace });
+  const specularMap = useSafeTexture(textures.specularMap, { colorSpace: THREE.LinearSRGBColorSpace });
+  const cloudsMap = useSafeTexture(textures.clouds, { colorSpace: THREE.SRGBColorSpace });
+  const ringColor = useSafeTexture(textures.ringColor, {
     colorSpace: THREE.SRGBColorSpace,
     wrapS: THREE.ClampToEdgeWrapping,
     wrapT: THREE.ClampToEdgeWrapping,
   });
-  const ringAlpha = useSafeTexture(textures.ringAlpha, "#ffffff", {
+  const ringAlpha = useSafeTexture(textures.ringAlpha, {
     colorSpace: THREE.LinearSRGBColorSpace,
     wrapS: THREE.ClampToEdgeWrapping,
     wrapT: THREE.ClampToEdgeWrapping,
@@ -194,13 +220,15 @@ function Planet({ name, simTimeSec, speedFactor, setEarthPos }: PlanetProps) {
   // Posición actual
   const currentPosition = getCurrentPosition(simTimeSec);
 
-  // Determinar si mostrar etiqueta (simple: siempre visible por ahora)
-  const [showLabel, setShowLabel] = useState(false);
+  // Determinar si mostrar etiqueta (mejorada lógica de visibilidad)
+  const [showLabel, setShowLabel] = useState(true);
 
-  // Mostrar etiqueta cuando el planeta está cerca de la cámara
+  // Mostrar etiqueta basado en distancia y escala de zoom de la cámara
   useFrame(({ camera }) => {
     const distance = camera.position.distanceTo(currentPosition);
-    setShowLabel(distance < 10); // Mostrar etiqueta si está a menos de 10 unidades
+    const cameraDistance = camera.position.length();
+    // Mostrar etiqueta si la cámara está relativamente cerca o en vista general del sistema
+    setShowLabel(distance < 15 || cameraDistance > 20); 
   });
 
   useEffect(() => {
@@ -212,7 +240,8 @@ function Planet({ name, simTimeSec, speedFactor, setEarthPos }: PlanetProps) {
   return (
     <group>
       {/* Órbita elíptica real */}
-      <line geometry={orbitGeometry}>
+      <line>
+        <bufferGeometry attach="geometry" ref={ref => ref && ref.setFromPoints(orbitPoints)} />
         <lineBasicMaterial color={orbitColor} transparent opacity={0.3} linewidth={1} />
       </line>
       
@@ -235,6 +264,7 @@ function Planet({ name, simTimeSec, speedFactor, setEarthPos }: PlanetProps) {
           name={name} 
           position={new THREE.Vector3(0, 0, 0)} 
           visible={showLabel}
+          radius={radius}
         />
         
         {/* Nubes para la Tierra */}
@@ -254,7 +284,7 @@ function Planet({ name, simTimeSec, speedFactor, setEarthPos }: PlanetProps) {
         {/* Anillos para Saturno */}
         {name === "Saturn" && (ringColor || ringAlpha) && (
           <mesh ref={ringsRef} rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[radius * 1.6, radius * 2.4, 64]} />
+            <ringGeometry args={[radius * 1.2, radius * 2.2, 64]} />
             <meshBasicMaterial
               map={ringColor ?? undefined}
               alphaMap={ringAlpha ?? undefined}
@@ -278,14 +308,11 @@ function AsteroidOrbit({ elements, deflected }: { elements: OrbitalElements; def
     return generateOrbitPoints(elements, 180);
   }, [elements]);
 
-  const orbitGeometry = useMemo(() => {
-    return new THREE.BufferGeometry().setFromPoints(orbitPoints);
-  }, [orbitPoints]);
-
   if (!elements) return null;
 
   return (
-    <line geometry={orbitGeometry}>
+    <line>
+      <bufferGeometry attach="geometry" ref={ref => ref && ref.setFromPoints(orbitPoints)} />
       <lineBasicMaterial 
         color={deflected ? "#22c55e" : "#f43f5e"} 
         linewidth={2} 
@@ -318,7 +345,7 @@ function Asteroid({ elements, deflected, simTimeSec, speedFactor }: {
     return geo;
   }, []);
   
-  const map = useSafeTexture(ASTEROID_TEXTURE, "#b6a48b");
+  const map = useSafeTexture(ASTEROID_TEXTURE);
 
   useFrame(({ clock }) => {
     if (!elements || !ref.current) return;
