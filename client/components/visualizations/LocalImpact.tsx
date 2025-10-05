@@ -1,7 +1,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState } from "react";
 
 export interface LocalImpactProps {
   lat: number;
@@ -26,52 +26,24 @@ function sph2cart(latDeg: number, lonDeg: number, r = 1) {
   return new THREE.Vector3(x, y, z);
 }
 
-// TEXTURAS - ya están del repositorio
+// TEXTURAS ALTERNATIVAS - Más confiables
 const EARTH_TEXTURES = {
-  color: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg",
-  specular: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg", 
-  clouds: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_clouds_2048.png"
+  // Opción 1: Texturas de NASA/dominio público
+  color: "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001589/GSFC_20171208_Archive_e001589~orig.jpg",
+  
+  // Opción 2: Texturas de dominio público alternativas
+  specular: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Earth_Western_Hemisphere_transparent_background.png/1024px-Earth_Western_Hemisphere_transparent_background.png",
+  
+  // Opción 3: Sin nubes para simplificar
+  clouds: ""
 };
-
-// Hook personalizado para debug
-function useTextureWithDebug(url: string) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null);
-  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
-
-  useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin("anonymous");
-    
-    console.log(`🔄 Cargando textura: ${url}`);
-    
-    loader.load(
-      url,
-      (loadedTexture) => {
-        console.log(`✅ Textura cargada: ${url}`);
-        loadedTexture.colorSpace = THREE.SRGBColorSpace;
-        setTexture(loadedTexture);
-        setStatus('loaded');
-      },
-      undefined,
-      (error) => {
-        console.error(`❌ Error cargando textura: ${url}`, error);
-        setStatus('error');
-        setTexture(null);
-      }
-    );
-  }, [url]);
-
-  return { texture, status };
-}
 
 function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
   const earthRef = useRef<THREE.Mesh>(null!);
   const cloudsRef = useRef<THREE.Mesh>(null!);
   
-  // Debug de texturas
-  const colorMapInfo = useTextureWithDebug(EARTH_TEXTURES.color);
-  const specularMapInfo = useTextureWithDebug(EARTH_TEXTURES.specular);
-  const cloudsMapInfo = useTextureWithDebug(EARTH_TEXTURES.clouds);
+  // Cargar solo la textura de color
+  const colorMap = useTexture(EARTH_TEXTURES.color);
 
   useFrame(() => {
     if (earthRef.current) {
@@ -82,38 +54,31 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
     }
   });
 
-  // Mostrar estado de carga en consola
-  useEffect(() => {
-    console.log('🌍 Estado texturas:', {
-      color: colorMapInfo.status,
-      specular: specularMapInfo.status, 
-      clouds: cloudsMapInfo.status
-    });
-  }, [colorMapInfo.status, specularMapInfo.status, cloudsMapInfo.status]);
-
   return (
     <group>
-      {/* Tierra principal */}
+      {/* Tierra principal - SOLO con textura de color */}
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhongMaterial
-          map={colorMapInfo.texture}
-          specularMap={specularMapInfo.texture}
-          specular={new THREE.Color(0x333333)}
-          shininess={15}
+          map={colorMap}
+          specular={new THREE.Color(0x222222)}
+          shininess={25} // Más brillo para mejor visibilidad
+          color={new THREE.Color(0xffffff)} // Color base blanco
         />
       </mesh>
       
-      {/* Capa de nubes */}
-      <mesh ref={cloudsRef}>
-        <sphereGeometry args={[1.005, 64, 64]} />
-        <meshPhongMaterial
-          map={cloudsMapInfo.texture}
-          transparent
-          opacity={0.6}
-          depthWrite={false}
-        />
-      </mesh>
+      {/* Nubes opcionales - solo si la textura carga */}
+      {EARTH_TEXTURES.clouds && (
+        <mesh ref={cloudsRef}>
+          <sphereGeometry args={[1.005, 64, 64]} />
+          <meshPhongMaterial
+            map={useTexture(EARTH_TEXTURES.clouds)}
+            transparent
+            opacity={0.3}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
       
       {/* Efecto de cráter */}
       <CraterEffect 
@@ -387,9 +352,9 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
   return (
     <div className="h-96 w-full rounded-lg overflow-hidden bg-[#060814]">
       <Canvas camera={{ position: [2.8, 1.8, 3.2], fov: 55 }}>
-        <ambientLight intensity={0.6} />
-        <pointLight position={[5, 5, 5]} intensity={2.5} />
-        <pointLight position={impactCenter.toArray()} intensity={4.0} color="#ff6b6b" />
+        <ambientLight intensity={0.8} /> {/* Más luz */}
+        <pointLight position={[5, 5, 5]} intensity={3.0} /> {/* Más intensidad */}
+        <pointLight position={impactCenter.toArray()} intensity={5.0} color="#ff6b6b" />
         
         <Stars radius={50} depth={30} count={5000} factor={2} saturation={0} fade speed={0.5} />
         
