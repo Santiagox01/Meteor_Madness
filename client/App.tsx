@@ -11,6 +11,7 @@ import Asteroids from "./pages/Asteroids";
 import Simulation from "./pages/Simulation";
 import Mission from "./pages/Mission";
 import Academy from "./pages/Academy";
+import Impacts from "./pages/Impacts";
 import NotFound from "./pages/NotFound";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/simulation" element={<Simulation />} />
             <Route path="/mission" element={<Mission />} />
             <Route path="/academy" element={<Academy />} />
+            <Route path="/impacts" element={<Impacts />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
               </Routes>

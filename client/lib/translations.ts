@@ -181,6 +181,43 @@ export interface Translations {
   contact: string;
   contactDescription: string;
   copyright: string;
+  
+  // Impact page translations
+  geologicalAndEnvironmentalImpacts: string;
+  impactsTitle: string;
+  impactsDescription: string;
+  impacts: string;
+  geologicalImpacts: string;
+  seismicActivity: string;
+  seismicActivityDescription: string;
+  seismicActivityContent: string;
+  craterFormation: string;
+  craterFormationDescription: string;
+  craterFormationContent: string;
+  groundWaterChanges: string;
+  groundWaterChangesDescription: string;
+  groundWaterChangesContent: string;
+  environmentalImpacts: string;
+  climaticEffects: string;
+  climaticEffectsDescription: string;
+  climaticEffectsContent: string;
+  biodiversityLoss: string;
+  biodiversityLossDescription: string;
+  biodiversityLossContent: string;
+  airQuality: string;
+  airQualityDescription: string;
+  airQualityContent: string;
+  globalConsequences: string;
+  globalConsequencesDescription: string;
+  tsunamis: string;
+  tsunamisDescription: string;
+  tsunamisContent: string;
+  globalWinter: string;
+  globalWinterDescription: string;
+  globalWinterContent: string;
+  ozoneDamage: string;
+  ozoneDamageDescription: string;
+  ozoneDamageContent: string;
 }
 
 export const translations: Record<'es' | 'en', Translations> = {
@@ -364,6 +401,43 @@ export const translations: Record<'es' | 'en', Translations> = {
     contact: "Contacto",
     contactDescription: "Centro de Defensa Planetaria · Estación Orbital Code Nebula",
     copyright: "© {year} Code Nebula. Uso educativo y de investigación.",
+    
+    // Impact page translations
+    geologicalAndEnvironmentalImpacts: "Impactos Geológicos y Ambientales",
+    impactsTitle: "Análisis de Impactos",
+    impactsDescription: "Evaluación completa de las consecuencias geológicas y ambientales de impactos asteroidales en la Tierra.",
+    impacts: "Impactos",
+    geologicalImpacts: "Impactos Geológicos",
+    seismicActivity: "Actividad Sísmica",
+    seismicActivityDescription: "Ondas sísmicas generadas por el impacto y sus efectos regionales.",
+    seismicActivityContent: "Los impactos de asteroides generan ondas sísmicas que se propagan a través de la corteza terrestre. Un asteroide de 1 km puede generar terremotos equivalentes a magnitud 7-8 en la escala de Richter, causando daños estructurales en un radio de cientos de kilómetros.",
+    craterFormation: "Formación de Cráteres",
+    craterFormationDescription: "Procesos de excavación y características del cráter resultante.",
+    craterFormationContent: "La energía cinética del impacto excava material de la superficie, creando cráteres cuyo diámetro puede ser 10-20 veces mayor que el del asteroide. Los cráteres complejos incluyen picos centrales, anillos de montañas y eyecta que se distribuye globalmente.",
+    groundWaterChanges: "Alteraciones del Agua Subterránea",
+    groundWaterChangesDescription: "Modificaciones en acuíferos y sistemas hidrológicos locales.",
+    groundWaterChangesContent: "El impacto puede fracturar rocas subterráneas, alterando el flujo de agua subterránea y creando nuevos manantiales o secando pozos existentes. Los efectos hidrológicos pueden persistir durante décadas después del impacto.",
+    environmentalImpacts: "Impactos Ambientales",
+    climaticEffects: "Efectos Climáticos",
+    climaticEffectsDescription: "Alteraciones atmosféricas y cambios de temperatura global.",
+    climaticEffectsContent: "Los impactos inyectan material particulado en la atmósfera, bloqueando la radiación solar y causando enfriamiento global. Los efectos pueden durar meses o años, afectando la agricultura y los ecosistemas terrestres.",
+    biodiversityLoss: "Pérdida de Biodiversidad",
+    biodiversityLossDescription: "Extinción de especies y alteración de ecosistemas.",
+    biodiversityLossContent: "Los grandes impactos pueden causar extinciones masivas, como ocurrió con los dinosaurios hace 66 millones de años. La destrucción de hábitats, cambios climáticos y acidificación oceánica contribuyen a la pérdida de biodiversidad.",
+    airQuality: "Calidad del Aire",
+    airQualityDescription: "Contaminación atmosférica y efectos respiratorios.",
+    airQualityContent: "Los detritos del impacto liberan gases tóxicos, vapores de azufre y partículas finas que degradan la calidad del aire. Los efectos sobre la salud humana incluyen problemas respiratorios y cardiovasculares en poblaciones cercanas.",
+    globalConsequences: "Consecuencias Globales",
+    globalConsequencesDescription: "Efectos planetarios de impactos catastróficos.",
+    tsunamis: "Tsunamis",
+    tsunamisDescription: "Ondas oceánicas generadas por impactos marinos.",
+    tsunamisContent: "Los impactos en océanos generan tsunamis con olas de hasta 100 metros de altura que pueden viajar a 800 km/h. Las costas globales pueden verse afectadas, con devastación en zonas densamente pobladas.",
+    globalWinter: "Invierno Global",
+    globalWinterDescription: "Enfriamiento prolongado debido al bloqueo solar.",
+    globalWinterContent: "Los grandes impactos pueden provocar un 'invierno de impacto' similar al invierno nuclear, con temperaturas globales reducidas en 1-3°C durante varios años. Esto afecta la producción agrícola mundial y puede causar hambrunas.",
+    ozoneDamage: "Daño a la Capa de Ozono",
+    ozoneDamageDescription: "Destrucción del ozono estratosférico y radiación UV.",
+    ozoneDamageContent: "Los óxidos de nitrógeno generados por el impacto destruyen la capa de ozono, permitiendo que más radiación ultravioleta alcance la superficie. Esto aumenta las tasas de cáncer de piel y daña los ecosistemas marinos.",
   },
   en: {
     // Navigation and Header
@@ -545,6 +619,43 @@ export const translations: Record<'es' | 'en', Translations> = {
     contact: "Contact",
     contactDescription: "Planetary Defense Center · Code Nebula Orbital Station",
     copyright: "© {year} Code Nebula. Educational and research use.",
+    
+    // Impact page translations
+    geologicalAndEnvironmentalImpacts: "Geological and Environmental Impacts",
+    impactsTitle: "Impact Analysis",
+    impactsDescription: "Comprehensive assessment of geological and environmental consequences of asteroid impacts on Earth.",
+    impacts: "Impacts",
+    geologicalImpacts: "Geological Impacts",
+    seismicActivity: "Seismic Activity",
+    seismicActivityDescription: "Seismic waves generated by impact and their regional effects.",
+    seismicActivityContent: "Asteroid impacts generate seismic waves that propagate through Earth's crust. A 1 km asteroid can produce earthquakes equivalent to magnitude 7-8 on the Richter scale, causing structural damage within a radius of hundreds of kilometers.",
+    craterFormation: "Crater Formation",
+    craterFormationDescription: "Excavation processes and characteristics of the resulting crater.",
+    craterFormationContent: "Impact kinetic energy excavates surface material, creating craters whose diameter can be 10-20 times larger than the asteroid. Complex craters include central peaks, mountain rings, and ejecta distributed globally.",
+    groundWaterChanges: "Groundwater Alterations",
+    groundWaterChangesDescription: "Modifications in aquifers and local hydrological systems.",
+    groundWaterChangesContent: "Impact can fracture underground rocks, altering groundwater flow and creating new springs or drying existing wells. Hydrological effects can persist for decades after impact.",
+    environmentalImpacts: "Environmental Impacts",
+    climaticEffects: "Climatic Effects",
+    climaticEffectsDescription: "Atmospheric alterations and global temperature changes.",
+    climaticEffectsContent: "Impacts inject particulate matter into the atmosphere, blocking solar radiation and causing global cooling. Effects can last months or years, affecting agriculture and terrestrial ecosystems.",
+    biodiversityLoss: "Biodiversity Loss",
+    biodiversityLossDescription: "Species extinction and ecosystem alteration.",
+    biodiversityLossContent: "Large impacts can cause mass extinctions, as occurred with dinosaurs 66 million years ago. Habitat destruction, climate change, and ocean acidification contribute to biodiversity loss.",
+    airQuality: "Air Quality",
+    airQualityDescription: "Atmospheric pollution and respiratory effects.",
+    airQualityContent: "Impact debris releases toxic gases, sulfur vapors, and fine particles that degrade air quality. Human health effects include respiratory and cardiovascular problems in nearby populations.",
+    globalConsequences: "Global Consequences",
+    globalConsequencesDescription: "Planetary effects of catastrophic impacts.",
+    tsunamis: "Tsunamis",
+    tsunamisDescription: "Ocean waves generated by marine impacts.",
+    tsunamisContent: "Ocean impacts generate tsunamis with waves up to 100 meters high that can travel at 800 km/h. Global coastlines can be affected, with devastation in densely populated areas.",
+    globalWinter: "Global Winter",
+    globalWinterDescription: "Prolonged cooling due to solar blocking.",
+    globalWinterContent: "Large impacts can trigger an 'impact winter' similar to nuclear winter, with global temperatures reduced by 1-3°C for several years. This affects global agricultural production and can cause famines.",
+    ozoneDamage: "Ozone Layer Damage",
+    ozoneDamageDescription: "Stratospheric ozone destruction and UV radiation.",
+    ozoneDamageContent: "Nitrogen oxides generated by impact destroy the ozone layer, allowing more ultraviolet radiation to reach the surface. This increases skin cancer rates and damages marine ecosystems.",
   }
 };
 

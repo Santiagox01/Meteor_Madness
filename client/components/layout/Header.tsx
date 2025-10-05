@@ -14,6 +14,7 @@ export default function Header() {
     { to: "/simulation", label: t.orbitalSimulation, emoji: "🌍" },
     { to: "/mission", label: t.missionCenter, emoji: "🛰️" },
     { to: "/academy", label: t.academy, emoji: "📚" },
+    { to: "/impacts", label: t.impacts, emoji: "⚠️" },
   ];
 
   return (
