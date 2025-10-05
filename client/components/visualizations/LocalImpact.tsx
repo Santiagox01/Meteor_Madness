@@ -42,8 +42,8 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
     // Gradiente azul-verde
     const gradient = context.createLinearGradient(0, 0, 256, 256);
     gradient.addColorStop(0, '#1e40af'); // Azul
-    gradient.addColorStop(0.5, '#4ade80'); // Verde  
-    gradient.addColorStop(1, '#00cffdff'); // Azul
+    gradient.addColorStop(0.5, '#4a99deff'); // Verde  
+    gradient.addColorStop(1, '#0e801fff'); // Azul
     
     context.fillStyle = gradient;
     context.fillRect(0, 0, 256, 256);
