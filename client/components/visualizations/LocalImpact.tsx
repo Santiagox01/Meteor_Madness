@@ -1,7 +1,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 
 export interface LocalImpactProps {
   lat: number;
@@ -26,21 +26,52 @@ function sph2cart(latDeg: number, lonDeg: number, r = 1) {
   return new THREE.Vector3(x, y, z);
 }
 
-// TEXTURAS MEJORADAS - URLs directas del repositorio de three.js
+// TEXTURAS - ya están del repositorio
 const EARTH_TEXTURES = {
   color: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg",
   specular: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg", 
   clouds: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_clouds_2048.png"
 };
 
+// Hook personalizado para debug
+function useTextureWithDebug(url: string) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.setCrossOrigin("anonymous");
+    
+    console.log(`🔄 Cargando textura: ${url}`);
+    
+    loader.load(
+      url,
+      (loadedTexture) => {
+        console.log(`✅ Textura cargada: ${url}`);
+        loadedTexture.colorSpace = THREE.SRGBColorSpace;
+        setTexture(loadedTexture);
+        setStatus('loaded');
+      },
+      undefined,
+      (error) => {
+        console.error(`❌ Error cargando textura: ${url}`, error);
+        setStatus('error');
+        setTexture(null);
+      }
+    );
+  }, [url]);
+
+  return { texture, status };
+}
+
 function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
   const earthRef = useRef<THREE.Mesh>(null!);
   const cloudsRef = useRef<THREE.Mesh>(null!);
   
-  // Usar useTexture de drei que es más robusto
-  const colorMap = useTexture(EARTH_TEXTURES.color);
-  const specularMap = useTexture(EARTH_TEXTURES.specular);
-  const cloudsMap = useTexture(EARTH_TEXTURES.clouds);
+  // Debug de texturas
+  const colorMapInfo = useTextureWithDebug(EARTH_TEXTURES.color);
+  const specularMapInfo = useTextureWithDebug(EARTH_TEXTURES.specular);
+  const cloudsMapInfo = useTextureWithDebug(EARTH_TEXTURES.clouds);
 
   useFrame(() => {
     if (earthRef.current) {
@@ -51,26 +82,35 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
     }
   });
 
+  // Mostrar estado de carga en consola
+  useEffect(() => {
+    console.log('🌍 Estado texturas:', {
+      color: colorMapInfo.status,
+      specular: specularMapInfo.status, 
+      clouds: cloudsMapInfo.status
+    });
+  }, [colorMapInfo.status, specularMapInfo.status, cloudsMapInfo.status]);
+
   return (
     <group>
-      {/* Tierra principal con texturas MEJORADAS */}
+      {/* Tierra principal */}
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhongMaterial
-          map={colorMap}
-          specularMap={specularMap}
+          map={colorMapInfo.texture}
+          specularMap={specularMapInfo.texture}
           specular={new THREE.Color(0x333333)}
-          shininess={15} {/* AUMENTADO para más reflejo */}
+          shininess={15}
         />
       </mesh>
       
-      {/* Capa de nubes MEJORADA */}
+      {/* Capa de nubes */}
       <mesh ref={cloudsRef}>
         <sphereGeometry args={[1.005, 64, 64]} />
         <meshPhongMaterial
-          map={cloudsMap}
+          map={cloudsMapInfo.texture}
           transparent
-          opacity={0.6} {/* AUMENTADO para más visibilidad */}
+          opacity={0.6}
           depthWrite={false}
         />
       </mesh>
@@ -84,11 +124,12 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
   );
 }
 
+// ... (el resto del código se mantiene IGUAL)
 function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: number }) {
   const craterRef = useRef<THREE.Mesh>(null!);
   
   const geometry = useMemo(() => {
-    const craterSize = Math.max(0.08, radius * 3); // Más grande
+    const craterSize = Math.max(0.08, radius * 3);
     const craterGeometry = new THREE.ConeGeometry(craterSize, craterSize * 0.5, 32);
     craterGeometry.translate(0, -craterSize * 0.25, 0);
     craterGeometry.rotateX(Math.PI);
@@ -113,7 +154,7 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
   return (
     <mesh
       ref={craterRef}
-      position={center.clone().multiplyScalar(1.03)} // Más alejado
+      position={center.clone().multiplyScalar(1.03)}
       quaternion={rotation}
       geometry={geometry}
     >
@@ -138,7 +179,6 @@ function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Ve
     for (let i = 0; i <= 64; i++) {
       const t = (2 * Math.PI * i) / 64;
       
-      // Cálculo simplificado pero funcional
       const lat0 = Math.asin(center.y);
       const lon0 = Math.atan2(center.z, center.x);
       
@@ -239,7 +279,6 @@ function ShockwaveParticles({ center, slowMotion }: { center: THREE.Vector3; slo
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
       
-      // Distribución más simple alrededor del centro
       const angle = Math.random() * Math.PI * 2;
       const distance = 0.1 + Math.random() * 0.2;
       
@@ -247,13 +286,11 @@ function ShockwaveParticles({ center, slowMotion }: { center: THREE.Vector3; slo
       positions[i3 + 1] = center.y + (Math.random() - 0.5) * 0.1;
       positions[i3 + 2] = center.z + Math.sin(angle) * distance;
       
-      // Normalizar para poner en superficie
       const pos = new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]).normalize();
       positions[i3] = pos.x;
       positions[i3 + 1] = pos.y;
       positions[i3 + 2] = pos.z;
       
-      // Colores cálidos
       colors[i3] = 1.0;
       colors[i3 + 1] = 0.2 + Math.random() * 0.5;
       colors[i3 + 2] = 0.0;
@@ -281,7 +318,6 @@ function ShockwaveParticles({ center, slowMotion }: { center: THREE.Vector3; slo
       const currentPos = new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]);
       const direction = currentPos.clone().normalize();
       
-      // Mover hacia afuera
       positions[i3] += direction.x * 0.008 * speed;
       positions[i3 + 1] += direction.y * 0.008 * speed;
       positions[i3 + 2] += direction.z * 0.008 * speed;
@@ -357,13 +393,10 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
         
         <Stars radius={50} depth={30} count={5000} factor={2} saturation={0} fade speed={0.5} />
         
-        {/* Tierra con texturas */}
         <Earth impactCenter={impactCenter} craterRadiusKm={craterRadiusKm} />
         
-        {/* Flash de explosión inicial */}
         <ExplosionFlash center={impactCenter} slowMotion={slowMotion} />
         
-        {/* Anillos de impacto */}
         <ImpactRings 
           center={impactCenter} 
           craterR={craterRadiusKm} 
@@ -371,7 +404,6 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
           moderateR={moderateRadiusKm} 
         />
         
-        {/* Ondas expansivas */}
         <DynamicWave 
           center={impactCenter} 
           baseRadiusKm={craterRadiusKm * 0.4} 
@@ -399,7 +431,6 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
           slowMotion={slowMotion} 
         />
         
-        {/* Partículas */}
         <ShockwaveParticles 
           center={impactCenter} 
           slowMotion={slowMotion} 
