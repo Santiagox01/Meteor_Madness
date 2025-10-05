@@ -60,7 +60,7 @@ export interface NEO {
 
 export interface AsteroidParams {
   name: string;
-  diameterMeters: number;
+  diameterKilometers: number;
   densityKgM3: number;
   velocityKmS: number;
   impactAngleDeg: number;

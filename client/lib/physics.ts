@@ -23,7 +23,8 @@ export function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
-export function computeMassKg(diameterMeters: number, densityKgM3: number) {
+export function computeMassKg(diameterKilometers: number, densityKgM3: number) {
+  const diameterMeters = diameterKilometers * 1000;
   const r = diameterMeters / 2;
   return (4 / 3) * Math.PI * r * r * r * densityKgM3;
 }
@@ -83,7 +84,7 @@ export function torinoScaleFromEnergyMt(Y_mt: number) {
 }
 
 export function runImpactModel(params: AsteroidParams): SimulationResult {
-  const massKg = computeMassKg(params.diameterMeters, params.densityKgM3);
+  const massKg = computeMassKg(params.diameterKilometers, params.densityKgM3);
   const E = kineticEnergyJ(massKg, params.velocityKmS);
   const Y_mt = tntMegatonsFromJoules(E);
   const craterDiameterKm = craterDiameterFromEnergyJ(E);

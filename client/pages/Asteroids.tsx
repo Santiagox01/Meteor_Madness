@@ -25,9 +25,9 @@ const hazardOptions = [
 
 const sizeOptions = [
   { value: "all", label: "Todos los tamaños" },
-  { value: "small", label: "< 100 m" },
-  { value: "medium", label: "100 - 1000 m" },
-  { value: "large", label: "> 1000 m" },
+  { value: "small", label: "< 0.1 km" },
+  { value: "medium", label: "0.1 - 1 km" },
+  { value: "large", label: "> 1 km" },
 ];
 
 export default function Asteroids() {
@@ -48,10 +48,10 @@ export default function Asteroids() {
       if (hazardFilter === "safe" && neo.is_potentially_hazardous_asteroid) return false;
 
       const est = neo.estimated_diameter?.meters;
-      const avgSize = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : 0;
-      if (sizeFilter === "small" && avgSize >= 100) return false;
-      if (sizeFilter === "medium" && (avgSize < 100 || avgSize > 1000)) return false;
-      if (sizeFilter === "large" && avgSize <= 1000) return false;
+      const avgSizeKm = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 / 1000 : 0;
+      if (sizeFilter === "small" && avgSizeKm >= 0.1) return false;
+      if (sizeFilter === "medium" && (avgSizeKm < 0.1 || avgSizeKm > 1)) return false;
+      if (sizeFilter === "large" && avgSizeKm <= 1) return false;
 
       return true;
     });
@@ -98,7 +98,7 @@ export default function Asteroids() {
       <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((neo) => {
           const est = neo.estimated_diameter?.meters;
-          const avgSize = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : 0;
+          const avgSizeKm = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 / 1000 : 0;
           const approach = neo.close_approach_data?.[0];
           const velocity = Number(approach?.relative_velocity?.kilometers_per_second ?? 0).toFixed(2);
           const distance = distanceMetric === "lunar"
@@ -122,7 +122,7 @@ export default function Asteroids() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground/70">Tamaño medio</div>
-                    <div className="text-foreground text-lg font-semibold">{avgSize.toFixed(0)} m</div>
+                    <div className="text-foreground text-lg font-semibold">{avgSizeKm.toFixed(3)} km</div>
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground/70">Velocidad</div>

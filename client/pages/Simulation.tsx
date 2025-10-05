@@ -53,7 +53,7 @@ export default function Simulation() {
   const queryParams = useQueryParams();
   const [params, setParams] = useState<AsteroidParams>({
     name: "Impactor-2025",
-    diameterMeters: 280,
+    diameterKilometers: 0.28,
     densityKgM3: 3000,
     velocityKmS: 22,
     impactAngleDeg: 42,
@@ -80,13 +80,14 @@ export default function Simulation() {
   useEffect(() => {
     if (neoData) {
       const est = neoData.estimated_diameter?.meters;
-      const avg = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : params.diameterMeters;
+      const avgMeters = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : params.diameterKilometers * 1000;
+      const avgKilometers = avgMeters / 1000;
       const velocity = Number(neoData.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second ?? params.velocityKmS);
       const miss = neoData.close_approach_data?.[0]?.miss_distance?.kilometers;
       setParams((prev) => ({
         ...prev,
         name: neoData.name || prev.name,
-        diameterMeters: avg || prev.diameterMeters,
+        diameterKilometers: avgKilometers || prev.diameterKilometers,
         velocityKmS: velocity || prev.velocityKmS,
         impactLat: prev.impactLat,
         impactLon: prev.impactLon,
@@ -223,12 +224,13 @@ export default function Simulation() {
     const neo = presets.find((n: any) => String(n.id) === id);
     if (!neo) return;
     const est = neo.estimated_diameter?.meters;
-    const avg = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : params.diameterMeters;
+    const avgMeters = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : params.diameterKilometers * 1000;
+    const avgKilometers = avgMeters / 1000;
     const velocity = Number(neo.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second ?? params.velocityKmS);
     setParams((prev) => ({
       ...prev,
       name: neo.name ?? prev.name,
-      diameterMeters: avg || prev.diameterMeters,
+      diameterKilometers: avgKilometers || prev.diameterKilometers,
       velocityKmS: velocity || prev.velocityKmS,
     }));
     navigate(`/simulation?neo=${neo.id}`);
@@ -274,7 +276,7 @@ export default function Simulation() {
             <option value="">{t.selectNEO}</option>
             {presets.map((neo: any) => (
               <option key={neo.id} value={neo.id}>
-                {neo.name} · {(neo.estimated_diameter?.meters?.estimated_diameter_max ?? 0).toFixed(0)} {t.meters}
+                {neo.name} · {((neo.estimated_diameter?.meters?.estimated_diameter_max ?? 0) / 1000).toFixed(3)} {t.km}
               </option>
             ))}
           </select>
