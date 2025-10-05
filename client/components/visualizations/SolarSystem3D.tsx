@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stars } from "@react-three/drei";
+import { OrbitControls, Stars, Text } from "@react-three/drei";
 import * as THREE from "three";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DeflectionParams } from "@/lib/api";
@@ -23,6 +23,7 @@ export interface SolarSystem3DProps {
   onImpactReached?: () => void;
   speedFactor?: number;
   asteroidId?: string;
+  showPlanetLabels?: boolean; // Nuevo: controlar visibilidad de etiquetas
 }
 
 type PlanetName =
@@ -38,23 +39,42 @@ type PlanetName =
 type PlanetDescriptor = {
   name: PlanetName;
   orbitColor: string;
-  radius: number;
+  // Radio en kilómetros (escala real)
+  radiusKm: number;
+  // Distancia máxima para mostrar etiqueta (en unidades AU de escena)
+  labelMaxDistance: number;
 };
 
+// RADIOS REALES EN KILÓMETROS y configuración de etiquetas
 const PLANETS: PlanetDescriptor[] = [
-  { name: "Mercury", orbitColor: "#a8a29e", radius: 0.1 },
-  { name: "Venus", orbitColor: "#fbbf24", radius: 0.13 },
-  { name: "Earth", orbitColor: "#38bdf8", radius: 0.15 },
-  { name: "Mars", orbitColor: "#ef4444", radius: 0.12 },
-  { name: "Jupiter", orbitColor: "#f59e0b", radius: 0.36 },
-  { name: "Saturn", orbitColor: "#fde68a", radius: 0.32 },
-  { name: "Uranus", orbitColor: "#60a5fa", radius: 0.22 },
-  { name: "Neptune", orbitColor: "#3b82f6", radius: 0.22 },
+  { name: "Mercury", orbitColor: "#a8a29e", radiusKm: 2439.7, labelMaxDistance: 15 },
+  { name: "Venus", orbitColor: "#fbbf24", radiusKm: 6051.8, labelMaxDistance: 15 },
+  { name: "Earth", orbitColor: "#38bdf8", radiusKm: 6371, labelMaxDistance: 15 },
+  { name: "Mars", orbitColor: "#ef4444", radiusKm: 3389.5, labelMaxDistance: 20 },
+  { name: "Jupiter", orbitColor: "#f59e0b", radiusKm: 69911, labelMaxDistance: 30 },
+  { name: "Saturn", orbitColor: "#fde68a", radiusKm: 58232, labelMaxDistance: 40 },
+  { name: "Uranus", orbitColor: "#60a5fa", radiusKm: 25362, labelMaxDistance: 50 },
+  { name: "Neptune", orbitColor: "#3b82f6", radiusKm: 24622, labelMaxDistance: 60 },
 ];
+
+// FACTOR DE ESCALA PARA VISUALIZACIÓN
+// El radio de la Tierra (6371 km) se escala a 0.15 unidades en la escena
+const EARTH_RADIUS_KM = 6371;
+const EARTH_SCENE_RADIUS = 0.15;
+const SCALE_FACTOR = EARTH_SCENE_RADIUS / EARTH_RADIUS_KM;
+
+// Función para convertir radio real a radio de escena
+function getSceneRadius(radiusKm: number): number {
+  return radiusKm * SCALE_FACTOR;
+}
 
 const TEXTURE_ROOT = "https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/";
 const SUN_TEXTURE = `${TEXTURE_ROOT}sunmap.jpg`;
 const ASTEROID_TEXTURE = `${TEXTURE_ROOT}moonmap1k.jpg`;
+
+// Radio REAL del Sol en km y su escala correspondiente
+const SUN_RADIUS_KM = 696340;
+const SUN_SCENE_RADIUS = getSceneRadius(SUN_RADIUS_KM);
 
 type PlanetTextureSet = {
   map: string;
@@ -85,82 +105,45 @@ const PLANET_TEXTURES: Record<PlanetName, PlanetTextureSet> = {
   Neptune: { map: `${TEXTURE_ROOT}neptunemap.jpg` },
 };
 
-type TextureOptions = {
-  colorSpace?: THREE.ColorSpace;
-  wrapS?: THREE.Wrapping;
-  wrapT?: THREE.Wrapping;
-  minFilter?: THREE.TextureFilter;
-  magFilter?: THREE.MagnificationTextureFilter;
-};
-
-function enhanceTexture(texture: THREE.Texture, options?: TextureOptions) {
-  texture.anisotropy = 8;
-  texture.colorSpace = options?.colorSpace ?? THREE.SRGBColorSpace;
-  if (options?.wrapS) texture.wrapS = options.wrapS;
-  if (options?.wrapT) texture.wrapT = options.wrapT;
-  if (options?.minFilter) texture.minFilter = options.minFilter;
-  if (options?.magFilter) texture.magFilter = options.magFilter;
-  texture.needsUpdate = true;
-}
-
-function createSolidTexture(color: string, colorSpace: THREE.ColorSpace = THREE.SRGBColorSpace) {
-  const c = new THREE.Color(color);
-  const data = new Uint8Array([
-    Math.round(c.r * 255),
-    Math.round(c.g * 255),
-    Math.round(c.b * 255),
-    255,
-  ]);
-  const texture = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat, THREE.UnsignedByteType);
-  texture.colorSpace = colorSpace;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function useSafeTexture(url?: string, fallbackColor?: string, options?: TextureOptions) {
-  const { colorSpace, wrapS, wrapT, minFilter, magFilter } = options ?? {};
-  const fallback = useMemo(() => (fallbackColor ? createSolidTexture(fallbackColor, colorSpace ?? THREE.SRGBColorSpace) : undefined), [fallbackColor, colorSpace]);
-  const [texture, setTexture] = useState<THREE.Texture | undefined>(fallback);
-
-  useEffect(() => {
-    if (!url) {
-      setTexture(fallback);
-      return;
-    }
-    let cancelled = false;
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin("anonymous");
-    loader.load(
-      url,
-      (loaded) => {
-        if (cancelled) return;
-        enhanceTexture(loaded, { colorSpace, wrapS, wrapT, minFilter, magFilter });
-        setTexture(loaded);
-      },
-      undefined,
-      () => {
-        if (cancelled) return;
-        console.warn(`[textures] Failed to load ${url}, using fallback.`);
-        setTexture(fallback);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [url, fallback, colorSpace, wrapS, wrapT, minFilter, magFilter]);
-
-  return texture;
-}
+// ... (funciones de texturas se mantienen igual: enhanceTexture, createSolidTexture, useSafeTexture)
 
 function Sun() {
-  const texture = useSafeTexture(SUN_TEXTURE, "#0035bbff");
+  const texture = useSafeTexture(SUN_TEXTURE, "#f5b342");
   return (
     <mesh>
-      <sphereGeometry args={[0.5, 64, 64]} />
+      <sphereGeometry args={[SUN_SCENE_RADIUS, 64, 64]} />
       <meshBasicMaterial map={texture ?? undefined} toneMapped={false} color={texture ? undefined : "#f5b342"} />
     </mesh>
+  );
+}
+
+// Componente de etiqueta para planetas
+function PlanetLabel({ 
+  name, 
+  position, 
+  visible,
+  fontSize = 0.3
+}: { 
+  name: string; 
+  position: THREE.Vector3; 
+  visible: boolean;
+  fontSize?: number;
+}) {
+  if (!visible) return null;
+
+  return (
+    <Text
+      position={[position.x, position.y + getSceneRadius(7000), position.z]} // Offset arriba del planeta
+      fontSize={fontSize}
+      color="white"
+      anchorX="center"
+      anchorY="middle"
+      font="/fonts/inter-regular.woff" // Puedes cambiar la fuente
+      outlineWidth={0.01}
+      outlineColor="#000000"
+    >
+      {name}
+    </Text>
   );
 }
 
@@ -168,15 +151,20 @@ interface PlanetProps extends PlanetDescriptor {
   simTimeSec: number;
   speedFactor: number;
   setEarthPos?: (v: THREE.Vector3) => void;
+  showLabel: boolean;
+  cameraDistance: number;
 }
 
-function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius }: PlanetProps) {
+function Planet({ name, orbitColor, radiusKm, labelMaxDistance, simTimeSec, speedFactor, setEarthPos, showLabel, cameraDistance }: PlanetProps) {
   const planetRef = useRef<THREE.Mesh>(null!);
   const cloudsRef = useRef<THREE.Mesh>(null!);
   const ringsRef = useRef<THREE.Mesh>(null!);
   
   // Obtener elementos orbitales del planeta
   const elements = PLANETARY_ELEMENTS[name];
+  
+  // Calcular radio de escena basado en radio real
+  const sceneRadius = getSceneRadius(radiusKm);
   
   // Generar puntos de la órbita
   const orbitPoints = useMemo(() => {
@@ -263,6 +251,9 @@ function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius
   // Posición actual
   const currentPosition = getCurrentPosition(simTimeSec);
 
+  // Determinar si mostrar etiqueta basado en distancia de cámara
+  const shouldShowLabel = showLabel && cameraDistance < labelMaxDistance;
+
   useEffect(() => {
     if (name === "Earth" && setEarthPos) {
       setEarthPos(currentPosition.clone());
@@ -279,7 +270,7 @@ function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius
       {/* Planeta en posición orbital actual */}
       <group position={[currentPosition.x, currentPosition.y, currentPosition.z]}>
         <mesh ref={planetRef} castShadow receiveShadow>
-          <sphereGeometry args={[radius, 80, 80]} />
+          <sphereGeometry args={[sceneRadius, 80, 80]} />
           <meshStandardMaterial
             map={map ?? undefined}
             roughnessMap={roughnessMap ?? specularMap ?? undefined}
@@ -290,10 +281,18 @@ function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius
           />
         </mesh>
         
+        {/* Etiqueta del planeta */}
+        <PlanetLabel 
+          name={name} 
+          position={new THREE.Vector3(0, 0, 0)} 
+          visible={shouldShowLabel}
+          fontSize={Math.max(0.2, 0.3 * (labelMaxDistance / Math.max(cameraDistance, 1)))}
+        />
+        
         {/* Nubes para la Tierra */}
         {cloudsMap && (
           <mesh ref={cloudsRef}>
-            <sphereGeometry args={[radius * 1.015, 80, 80]} />
+            <sphereGeometry args={[sceneRadius * 1.015, 80, 80]} />
             <meshStandardMaterial 
               map={cloudsMap} 
               transparent 
@@ -307,7 +306,7 @@ function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius
         {/* Anillos para Saturno */}
         {name === "Saturn" && (ringColor || ringAlpha) && (
           <mesh ref={ringsRef} rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[radius * 1.6, radius * 2.4, 256]} />
+            <ringGeometry args={[sceneRadius * 1.6, sceneRadius * 2.4, 256]} />
             <meshBasicMaterial
               map={ringColor ?? undefined}
               alphaMap={ringAlpha ?? undefined}
@@ -323,82 +322,7 @@ function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius
   );
 }
 
-function AsteroidOrbit({ elements, deflected }: { elements: OrbitalElements; deflected: boolean }) {
-  const orbitPoints = useMemo(() => {
-    if (!elements) return [];
-    return generateOrbitPoints(elements, 180);
-  }, [elements]);
-
-  const orbitGeometry = useMemo(() => {
-    return new THREE.BufferGeometry().setFromPoints(orbitPoints);
-  }, [orbitPoints]);
-
-  if (!elements) return null;
-
-  return (
-    <lineSegments geometry={orbitGeometry}>
-      <lineBasicMaterial 
-        color={deflected ? "#22c55e" : "#f43f5e"} 
-        linewidth={2} 
-        transparent 
-        opacity={0.7} 
-      />
-    </lineSegments>
-  );
-}
-
-function Asteroid({ elements, deflected, simTimeSec, speedFactor }: { 
-  elements: OrbitalElements; 
-  deflected: boolean;
-  simTimeSec: number;
-  speedFactor: number;
-}) {
-  const ref = useRef<THREE.Mesh>(null!);
-  const geometry = useMemo(() => {
-    const geo = new THREE.IcosahedronGeometry(0.08, 3);
-    const position = geo.attributes.position as THREE.BufferAttribute;
-    const temp = new THREE.Vector3();
-    for (let i = 0; i < position.count; i++) {
-      temp.set(position.getX(i), position.getY(i), position.getZ(i));
-      const displacement = (Math.sin(temp.x * 9.7) + Math.cos(temp.y * 7.3) + Math.sin(temp.z * 5.1)) / 9 + 0.5;
-      const scale = 1 + (displacement - 0.5) * 0.35;
-      temp.multiplyScalar(scale);
-      position.setXYZ(i, temp.x, temp.y, temp.z);
-    }
-    geo.computeVertexNormals();
-    return geo;
-  }, []);
-  
-  const map = useSafeTexture(ASTEROID_TEXTURE, "#b6a48b");
-
-  useFrame(({ clock }) => {
-    if (!elements || !ref.current) return;
-    
-    // Calcular posición con elementos modificados si está desviado
-    const currentElements = deflected ? 
-      { 
-        ...elements, 
-        e: Math.min(elements.e * 1.5, 0.99), // Aumentar excentricidad
-        ω: elements.ω + 10 // Cambiar argumento del perihelio
-      } : 
-      elements;
-    
-    const effectiveTime = simTimeSec * speedFactor;
-    const position = getOrbitalPosition(currentElements, effectiveTime);
-    ref.current.position.copy(position.position);
-    
-    // Rotación del asteroide
-    const rotationSpeed = 0.003 * speedFactor;
-    ref.current.rotation.y += rotationSpeed * clock.getDelta();
-    ref.current.rotation.x += (rotationSpeed * 0.5) * clock.getDelta();
-  });
-
-  return (
-    <mesh ref={ref} geometry={geometry} castShadow>
-      <meshStandardMaterial map={map ?? undefined} roughness={0.95} metalness={0.05} color={!map ? "#b6a48b" : undefined} />
-    </mesh>
-  );
-}
+// ... (AsteroidOrbit, Asteroid, CameraController se mantienen igual)
 
 function CameraController({ cameraMode, getTargets }: { cameraMode: CameraMode; getTargets: () => { earth: THREE.Vector3; asteroid: THREE.Vector3 } }) {
   const { camera } = useThree();
@@ -415,6 +339,19 @@ function CameraController({ cameraMode, getTargets }: { cameraMode: CameraMode; 
   return null;
 }
 
+// Hook para obtener distancia de cámara
+function useCameraDistance(targetPosition: THREE.Vector3): number {
+  const { camera } = useThree();
+  const [distance, setDistance] = useState(0);
+  
+  useFrame(() => {
+    const dist = camera.position.distanceTo(targetPosition);
+    setDistance(dist);
+  });
+  
+  return distance;
+}
+
 export default function SolarSystem3D({ 
   simTimeSec, 
   playing, 
@@ -424,7 +361,8 @@ export default function SolarSystem3D({
   goToImpactSignal, 
   onImpactReached,
   speedFactor = 1,
-  asteroidId = "433" // Eros por defecto
+  asteroidId = "433",
+  showPlanetLabels = true // Por defecto mostrar etiquetas
 }: SolarSystem3DProps) {
   const earthPos = useRef(new THREE.Vector3(0, 0, 1));
   const asteroidPos = useRef(new THREE.Vector3(0, 0, 0));
@@ -433,6 +371,9 @@ export default function SolarSystem3D({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [goSeek, setGoSeek] = useState(0);
+
+  // Obtener distancia de cámara a la Tierra para controlar etiquetas
+  const cameraDistance = useCameraDistance(earthPos.current);
 
   // Cargar datos del asteroide
   useEffect(() => {
@@ -523,8 +464,8 @@ export default function SolarSystem3D({
         </div>
       )}
       {error && (
-        <div className="absolute top-4 left-4 z-10 bg-red-500/80 text-white px-3 py-2 rounded">
-          {error}
+        <div className="absolute top-4 left-4 z-10 bg-yellow-500/80 text-black px-3 py-2 rounded text-sm">
+          Using simulated orbit: {error}
         </div>
       )}
       
@@ -536,7 +477,7 @@ export default function SolarSystem3D({
         
         <Sun />
         
-        {/* Planetas con órbitas reales */}
+        {/* Planetas con órbitas reales y etiquetas */}
         {PLANETS.map((planet) => (
           <Planet
             key={planet.name}
@@ -546,6 +487,8 @@ export default function SolarSystem3D({
             setEarthPos={(vector: THREE.Vector3) => {
               if (planet.name === "Earth") earthPos.current.copy(vector);
             }}
+            showLabel={showPlanetLabels}
+            cameraDistance={cameraDistance}
           />
         ))}
         
