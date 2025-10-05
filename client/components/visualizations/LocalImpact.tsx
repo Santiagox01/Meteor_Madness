@@ -47,9 +47,9 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
     gradient.addColorStop(0.3, '#3b82f6');   // Mar continental
     gradient.addColorStop(0.35, '#0e801f');  // Bosques densos
     gradient.addColorStop(0.45, '#16a34a');  // Tierras verdes
-    gradient.addColorStop(0.55, '#ca8a04');  // Desiertos
-    gradient.addColorStop(0.65, '#a16207');  // Tierras áridas
-    gradient.addColorStop(0.75, '#57534e');  // Montañas
+    gradient.addColorStop(0.55, '#2563eb');  // Desiertos
+    gradient.addColorStop(0.65, '#1e3a8a');  // Tierras áridas
+    gradient.addColorStop(0.75, '#3b82f6');  // Montañas
     gradient.addColorStop(0.85, '#374151');  // Montañas rocosas
     gradient.addColorStop(0.9, '#1e40af');   // Océano profundo
     gradient.addColorStop(1, '#1e3a8a');     // Océano profundo
