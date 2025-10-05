@@ -103,7 +103,7 @@ export default function Asteroids() {
           const velocity = Number(approach?.relative_velocity?.kilometers_per_second ?? 0).toFixed(2);
           const distance = distanceMetric === "lunar"
             ? Number(approach?.miss_distance?.lunar ?? 0).toFixed(2)
-            : Number(approach?.miss_distance?.kilometers ?? 0).toLocaleString("es-ES");
+            : Number(approach?.miss_distance?.kilometers ?? 0).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
           return (
             <Card key={neo.id} className="space-panel">
@@ -122,7 +122,7 @@ export default function Asteroids() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground/70">Tamaño medio</div>
-                    <div className="text-foreground text-lg font-semibold">{avgSizeKm.toFixed(3)} km</div>
+                    <div className="text-foreground text-lg font-semibold">{avgSizeKm.toFixed(2)} km</div>
                   </div>
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground/70">Velocidad</div>

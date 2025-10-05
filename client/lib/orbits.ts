@@ -279,7 +279,7 @@ export function getEarthPosition(simTimeSec: number): { x: number; y: number; z:
 }
 
 export function getAsteroidPosition(simTimeSec: number, deflected = false): { x: number; y: number; z: number } {
-  // Usar elementos de Eros (433) como ejemplo
+  // Usar elementos de Eros (433) como ejemplo con ajustes para mejor simulación
   const asteroidElements: OrbitalElements = {
     a: 1.458,
     e: 0.223,
@@ -291,13 +291,17 @@ export function getAsteroidPosition(simTimeSec: number, deflected = false): { x:
     period: 643.2
   };
   
+  // Mejor sincronización temporal - usar tiempo ajustado con la época
+  const adjustedTime = simTimeSec + (Date.now() / 1000 - simTimeSec) * 0.1; // Suavizar transiciones
+  
   if (deflected) {
-    // Simular deflexión modificando elementos
-    asteroidElements.a *= 1.05;
-    asteroidElements.e = Math.min(asteroidElements.e * 1.2, 0.99);
+    // Simular deflexión modificando elementos orbitales de forma más realista
+    asteroidElements.a *= 1.02; // Cambio menor en semieje mayor
+    asteroidElements.e = Math.min(asteroidElements.e * 1.1, 0.95); // Cambio controlado en excentricidad
+    asteroidElements.M0 += 15; // Desplazamiento en anomalía media
   }
   
-  const asteroidPos = getOrbitalPosition(asteroidElements, simTimeSec);
+  const asteroidPos = getOrbitalPosition(asteroidElements, adjustedTime);
   return {
     x: asteroidPos.position.x,
     y: asteroidPos.position.y,
@@ -319,6 +323,113 @@ export function auToSceneUnits(distanceAU: number): number {
 
 export function sceneUnitsToAU(distanceSceneUnits: number): number {
   return distanceSceneUnits / SCENE_SCALE;
+}
+
+/**
+ * Calcula la trayectoria de un meteorito teniendo en cuenta el día de aproximación
+ * @param approachDate - Fecha de aproximación en formato ISO string o timestamp
+ * @param currentTime - Tiempo actual en segundos UTC
+ * @param elements - Elementos orbitales del asteroide
+ * @returns Datos de trayectoria incluida la aproximación más cercana
+ */
+export interface TrajectoryData {
+  currentPosition: THREE.Vector3;
+  approachPosition: THREE.Vector3;
+  distanceToEarth: number;
+  timeToApproach: number;
+  relativeVelocity: number;
+  impactProbability: number;
+}
+
+export function calculateMeteoriteTrajectory(
+  approachDate: string | number,
+  currentTime: number,
+  elements: OrbitalElements
+): TrajectoryData {
+  // Convertir fecha de aproximación a timestamp si es string
+  const approachTime = typeof approachDate === 'string' 
+    ? new Date(approachDate).getTime() / 1000
+    : approachDate;
+  
+  // Calcular posición actual del meteorito
+  const currentPos = getOrbitalPosition(elements, currentTime);
+  
+  // Calcular posición en el momento de máxima aproximación
+  const approachPos = getOrbitalPosition(elements, approachTime);
+  
+  // Posición de la Tierra en ambos momentos
+  const earthCurrentPos = getOrbitalPosition(PLANETARY_ELEMENTS.Earth, currentTime);
+  const earthApproachPos = getOrbitalPosition(PLANETARY_ELEMENTS.Earth, approachTime);
+  
+  // Calcular distancia actual a la Tierra
+  const distanceToEarth = currentPos.position.distanceTo(earthCurrentPos.position);
+  const distanceToEarthKm = sceneUnitsToKm(distanceToEarth);
+  
+  // Tiempo hasta la aproximación
+  const timeToApproach = approachTime - currentTime;
+  
+  // Velocidad relativa estimada (simplificada)
+  const distanceTraveled = currentPos.position.distanceTo(approachPos.position);
+  const distanceTraveledKm = sceneUnitsToKm(distanceTraveled);
+  const relativeVelocity = timeToApproach > 0 ? distanceTraveledKm / (timeToApproach / 3600) : 0;
+  
+  // Probabilidad de impacto basada en distancia mínima (simplificada)
+  const minApproachDistance = approachPos.position.distanceTo(earthApproachPos.position);
+  const minDistanceKm = sceneUnitsToKm(minApproachDistance);
+  const earthRadius = 6371; // km
+  const impactProbability = Math.max(0, Math.min(1, 
+    1 - (minDistanceKm - earthRadius) / (earthRadius * 10)
+  ));
+  
+  return {
+    currentPosition: currentPos.position,
+    approachPosition: approachPos.position,
+    distanceToEarth: distanceToEarthKm,
+    timeToApproach,
+    relativeVelocity,
+    impactProbability
+  };
+}
+
+/**
+ * Genera puntos de trayectoria para visualización de la aproximación
+ * @param elements - Elementos orbitales
+ * @param startTime - Tiempo inicial
+ * @param endTime - Tiempo final
+ * @param numPoints - Número de puntos a generar
+ * @returns Array de puntos de trayectoria con timestamps
+ */
+export interface TrajectoryPoint {
+  position: THREE.Vector3;
+  time: number;
+  distanceToEarth: number;
+}
+
+export function generateTrajectoryPoints(
+  elements: OrbitalElements,
+  startTime: number,
+  endTime: number,
+  numPoints: number = 100
+): TrajectoryPoint[] {
+  const points: TrajectoryPoint[] = [];
+  const timeStep = (endTime - startTime) / (numPoints - 1);
+  
+  for (let i = 0; i < numPoints; i++) {
+    const time = startTime + i * timeStep;
+    const asteroidPos = getOrbitalPosition(elements, time);
+    const earthPos = getOrbitalPosition(PLANETARY_ELEMENTS.Earth, time);
+    const distanceToEarth = sceneUnitsToKm(
+      asteroidPos.position.distanceTo(earthPos.position)
+    );
+    
+    points.push({
+      position: asteroidPos.position,
+      time,
+      distanceToEarth
+    });
+  }
+  
+  return points;
 }
 
 /**

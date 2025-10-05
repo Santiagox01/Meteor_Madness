@@ -5,12 +5,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { DeflectionParams } from "@/lib/api";
 import { estimateDeflectionOutcome } from "@/lib/physics";
 import type { CameraMode } from "@/components/controls/TimeControls";
-import { 
-  getOrbitalPosition, 
-  generateOrbitPoints, 
+import {
+  getOrbitalPosition,
+  generateOrbitPoints,
   PLANETARY_ELEMENTS,
   type OrbitalElements,
-  NASADataService
+  NASADataService,
+  calculateMeteoriteTrajectory,
+  generateTrajectoryPoints,
+  type TrajectoryData
 } from "@/lib/orbits";
 
 export interface SolarSystem3DProps {
@@ -23,6 +26,7 @@ export interface SolarSystem3DProps {
   onImpactReached?: () => void;
   speedFactor?: number;
   asteroidId?: string;
+  approachDate?: string; // Nueva prop para fecha de aproximación
 }
 
 type PlanetName =
@@ -323,13 +327,45 @@ function AsteroidOrbit({ elements, deflected }: { elements: OrbitalElements; def
   );
 }
 
-function Asteroid({ elements, deflected, simTimeSec, speedFactor }: { 
+// Añadir visualización de trayectoria basada en fecha de aproximación
+function TrajectoryPath({ elements, approachDate, currentTime }: { 
+  elements: OrbitalElements; 
+  approachDate?: string; 
+  currentTime: number; 
+}) {
+  const trajectoryPoints = useMemo(() => {
+    if (!approachDate || !elements) return [];
+    
+    const approachTime = new Date(approachDate).getTime() / 1000;
+    const startTime = Math.min(currentTime, approachTime - 86400 * 30); // 30 días antes
+    const endTime = Math.max(currentTime, approachTime + 86400 * 7); // 7 días después
+    
+    return generateTrajectoryPoints(elements, startTime, endTime, 50);
+  }, [elements, approachDate, currentTime]);
+
+  if (trajectoryPoints.length === 0) return null;
+
+  const points = trajectoryPoints.map(tp => tp.position);
+
+  return (
+    <line>
+      <bufferGeometry attach="geometry" ref={ref => ref && ref.setFromPoints(points)} />
+      <lineBasicMaterial color="#fbbf24" transparent opacity={0.6} linewidth={3} />
+    </line>
+  );
+}
+
+// Mejorar el componente Asteroid para usar cálculos de trayectoria
+function Asteroid({ elements, deflected, simTimeSec, speedFactor, approachDate }: { 
   elements: OrbitalElements; 
   deflected: boolean;
   simTimeSec: number;
   speedFactor: number;
+  approachDate?: string;
 }) {
   const ref = useRef<THREE.Mesh>(null!);
+  const [trajectoryData, setTrajectoryData] = useState<TrajectoryData | null>(null);
+  
   const geometry = useMemo(() => {
     const geo = new THREE.IcosahedronGeometry(0.08, 3);
     const position = geo.attributes.position as THREE.BufferAttribute;
@@ -346,6 +382,14 @@ function Asteroid({ elements, deflected, simTimeSec, speedFactor }: {
   }, []);
   
   const map = useSafeTexture(ASTEROID_TEXTURE);
+
+  // Calcular datos de trayectoria
+  useEffect(() => {
+    if (elements && approachDate) {
+      const trajectory = calculateMeteoriteTrajectory(approachDate, simTimeSec, elements);
+      setTrajectoryData(trajectory);
+    }
+  }, [elements, approachDate, simTimeSec]);
 
   useFrame(({ clock }) => {
     if (!elements || !ref.current) return;
@@ -368,9 +412,31 @@ function Asteroid({ elements, deflected, simTimeSec, speedFactor }: {
   });
 
   return (
-    <mesh ref={ref} geometry={geometry} castShadow>
-      <meshStandardMaterial map={map ?? undefined} roughness={0.95} metalness={0.05} color={!map ? "#b6a48b" : undefined} />
-    </mesh>
+    <>
+      <mesh ref={ref} geometry={geometry} castShadow>
+        <meshStandardMaterial 
+          map={map ?? undefined} 
+          roughness={0.95} 
+          metalness={0.05} 
+          color={!map ? "#b6a48b" : undefined} 
+        />
+      </mesh>
+      
+      {/* Mostrar información de trayectoria si está disponible */}
+      {trajectoryData && trajectoryData.impactProbability > 0.1 && (
+        <Text
+          position={[ref.current?.position.x + 0.5 || 0, ref.current?.position.y + 0.5 || 0, ref.current?.position.z || 0]}
+          fontSize={0.08}
+          color={trajectoryData.impactProbability > 0.5 ? "#ef4444" : "#f59e0b"}
+          anchorX="center"
+          anchorY="middle"
+          outlineWidth={0.01}
+          outlineColor="black"
+        >
+          {`Prob: ${(trajectoryData.impactProbability * 100).toFixed(2)}%`}
+        </Text>
+      )}
+    </>
   );
 }
 
@@ -400,7 +466,8 @@ export default function SolarSystem3D({
   goToImpactSignal, 
   onImpactReached,
   speedFactor = 1,
-  asteroidId = "433"
+  asteroidId = "433",
+  approachDate
 }: SolarSystem3DProps) {
   const earthPos = useRef(new THREE.Vector3(0, 0, 1));
   const asteroidPos = useRef(new THREE.Vector3(0, 0, 0));
@@ -522,11 +589,17 @@ export default function SolarSystem3D({
         {asteroidElements && (
           <>
             <AsteroidOrbit elements={asteroidElements} deflected={deflected} />
+            <TrajectoryPath 
+              elements={asteroidElements} 
+              approachDate={approachDate} 
+              currentTime={currentSimTime} 
+            />
             <Asteroid 
               elements={asteroidElements} 
               deflected={deflected} 
               simTimeSec={currentSimTime}
               speedFactor={speedFactor}
+              approachDate={approachDate}
             />
           </>
         )}
