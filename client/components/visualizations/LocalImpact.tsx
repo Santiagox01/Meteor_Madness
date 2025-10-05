@@ -28,31 +28,38 @@ function sph2cart(latDeg: number, lonDeg: number, r = 1) {
 
 function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
   const earthRef = useRef<THREE.Mesh>(null!);
-  
+
   // DEBUG: Crear una textura de colores programática
   const debugTexture = useMemo(() => {
     console.log("🔄 Creando textura de debug...");
-    
+
     // Crear una textura simple con colores
     const canvas = document.createElement('canvas');
     canvas.width = 256;
     canvas.height = 256;
     const context = canvas.getContext('2d')!;
-    
-    // Gradiente azul-verde
+
     const gradient = context.createLinearGradient(0, 0, 256, 256);
-    gradient.addColorStop(0, '#1e40af'); // Azul
-    gradient.addColorStop(0.5, '#4a99deff'); // Verde  
-    gradient.addColorStop(1, '#0e801fff'); // Azul
-    
+
+    // Gradiente mejorado para la Tierra
+    gradient.addColorStop(0, '#1e3a8a');     // Azul marino profundo (océanos)
+    gradient.addColorStop(0.2, '#2563eb');   // Azul oceánico
+    gradient.addColorStop(0.4, '#4a99de');   // Azul claro (mares)
+    gradient.addColorStop(0.5, '#0e801f');   // Verde bosque
+    gradient.addColorStop(0.6, '#22c55e');   // Verde tierra
+    gradient.addColorStop(0.7, '#f59e0b');   // Marrón desierto
+    gradient.addColorStop(0.8, '#d97706');   // Marrón tierra
+    gradient.addColorStop(0.9, '#854d0e');   // Marrón montañas
+    gradient.addColorStop(1, '#1e40af');     // Azul de regreso
+
     context.fillStyle = gradient;
     context.fillRect(0, 0, 256, 256);
-    
+
     // Añadir texto de debug
     context.fillStyle = 'white';
     context.font = '20px Arial';
     context.fillText('', 30, 128);
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     console.log("✅ Textura de debug creada");
     return texture;
@@ -71,16 +78,16 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
       {/* ESFERA DE DEBUG - MUY SIMPLE */}
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshBasicMaterial 
+        <meshBasicMaterial
           map={debugTexture}
           color={0xffffff}
         />
       </mesh>
-      
+
       {/* CRÁTER VISIBLE */}
-      <CraterEffect 
-        center={impactCenter} 
-        radius={craterRadiusKm / RE} 
+      <CraterEffect
+        center={impactCenter}
+        radius={craterRadiusKm / RE}
       />
     </group>
   );
@@ -88,7 +95,7 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
 
 function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: number }) {
   const craterRef = useRef<THREE.Mesh>(null!);
-  
+
   const geometry = useMemo(() => {
     const craterSize = Math.max(0.08, radius * 3);
     const craterGeometry = new THREE.ConeGeometry(craterSize, craterSize * 0.5, 32);
@@ -98,8 +105,8 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
   }, [radius]);
 
   const normal = useMemo(() => center.clone().normalize(), [center]);
-  const rotation = useMemo(() => 
-    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal), 
+  const rotation = useMemo(() =>
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal),
     [normal]
   );
 
@@ -132,24 +139,24 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
 
 function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Vector3; craterR: number; severeR: number; moderateR: number }) {
   const ringsRef = useRef<THREE.Group>(null!);
-  
+
   const mkRing = (radiusKm: number, color: string, width: number = 4) => {
     const points: THREE.Vector3[] = [];
     const ang = radiusKm / RE;
-    
+
     for (let i = 0; i <= 64; i++) {
       const t = (2 * Math.PI * i) / 64;
-      
+
       const lat0 = Math.asin(center.y);
       const lon0 = Math.atan2(center.z, center.x);
-      
+
       const x = Math.cos(lat0) * Math.cos(lon0 + t * ang);
       const y = Math.sin(lat0);
       const z = Math.cos(lat0) * Math.sin(lon0 + t * ang);
-      
+
       points.push(new THREE.Vector3(x, y, z));
     }
-    
+
     return (
       <line>
         <bufferGeometry attach="geometry" ref={ref => ref && ref.setFromPoints(points)} />
@@ -182,13 +189,13 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
   const meshRef = useRef<THREE.Mesh>(null!);
   const materialRef = useRef<THREE.MeshBasicMaterial>(null!);
   const phaseRef = useRef(0);
-  
+
   const normal = useMemo(() => center.clone().normalize(), [center]);
-  const rotation = useMemo(() => 
-    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal), 
+  const rotation = useMemo(() =>
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal),
     [normal]
   );
-  
+
   const position = useMemo(() => normal.clone().multiplyScalar(1.002), [normal]);
   const angularRadius = baseRadiusKm / RE;
   const radius = Math.max(0.08, Math.sin(Math.min(Math.PI / 2, angularRadius)));
@@ -197,16 +204,16 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
   useFrame((_, delta) => {
     const speed = slowMotion ? 0.15 : 0.6;
     phaseRef.current = (phaseRef.current + delta * speed) % 2.5;
-    
+
     const scale = 1 + phaseRef.current * 4.0;
     if (meshRef.current) {
       meshRef.current.scale.setScalar(scale);
     }
-    
+
     if (materialRef.current) {
       const fade = Math.max(0, 1 - phaseRef.current / 2.5);
       materialRef.current.opacity = (isShockwave ? 1.0 : 0.9) * fade;
-      
+
       if (isShockwave) {
         const pulse = 0.6 + 0.4 * Math.sin(phaseRef.current * Math.PI * 6);
         materialRef.current.opacity *= pulse;
@@ -217,10 +224,10 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
   return (
     <mesh ref={meshRef} position={position} quaternion={rotation}>
       <ringGeometry args={[radius, radius + thickness, 48]} />
-      <meshBasicMaterial 
-        ref={materialRef} 
-        color={color} 
-        transparent 
+      <meshBasicMaterial
+        ref={materialRef}
+        color={color}
+        transparent
         opacity={isShockwave ? 1.0 : 0.9}
         side={THREE.DoubleSide}
         blending={THREE.AdditiveBlending}
@@ -231,32 +238,32 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
 
 function ShockwaveParticles({ center, slowMotion }: { center: THREE.Vector3; slowMotion: boolean }) {
   const particlesRef = useRef<THREE.Points>(null!);
-  
+
   const [particles] = useState(() => {
     const count = 80;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
-    
+
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
-      
+
       const angle = Math.random() * Math.PI * 2;
       const distance = 0.1 + Math.random() * 0.2;
-      
+
       positions[i3] = center.x + Math.cos(angle) * distance;
       positions[i3 + 1] = center.y + (Math.random() - 0.5) * 0.1;
       positions[i3 + 2] = center.z + Math.sin(angle) * distance;
-      
+
       const pos = new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]).normalize();
       positions[i3] = pos.x;
       positions[i3 + 1] = pos.y;
       positions[i3 + 2] = pos.z;
-      
+
       colors[i3] = 1.0;
       colors[i3 + 1] = 0.2 + Math.random() * 0.5;
       colors[i3 + 2] = 0.0;
     }
-    
+
     return { positions, colors };
   });
 
@@ -269,21 +276,21 @@ function ShockwaveParticles({ center, slowMotion }: { center: THREE.Vector3; slo
 
   useFrame(() => {
     if (!particlesRef.current) return;
-    
+
     const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
     const speed = slowMotion ? 0.2 : 0.8;
-    
+
     for (let i = 0; i < positions.length / 3; i++) {
       const i3 = i * 3;
-      
+
       const currentPos = new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]);
       const direction = currentPos.clone().normalize();
-      
+
       positions[i3] += direction.x * 0.008 * speed;
       positions[i3 + 1] += direction.y * 0.008 * speed;
       positions[i3 + 2] += direction.z * 0.008 * speed;
     }
-    
+
     particlesRef.current.geometry.attributes.position.needsUpdate = true;
   });
 
@@ -306,15 +313,15 @@ function ExplosionFlash({ center, slowMotion }: { center: THREE.Vector3; slowMot
   const meshRef = useRef<THREE.Mesh>(null!);
   const materialRef = useRef<THREE.MeshBasicMaterial>(null!);
   const phaseRef = useRef(0);
-  
+
   useFrame((_, delta) => {
     const speed = slowMotion ? 0.3 : 1.5;
     phaseRef.current += delta * speed;
-    
+
     if (phaseRef.current < 1.5) {
       const scale = 0.5 + phaseRef.current * 3.0;
       const opacity = Math.max(0, 1.0 - phaseRef.current / 1.5);
-      
+
       if (meshRef.current) {
         meshRef.current.scale.setScalar(scale);
       }
@@ -353,53 +360,53 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
         <ambientLight intensity={0.8} />
         <pointLight position={[5, 5, 5]} intensity={3.0} />
         <pointLight position={impactCenter.toArray()} intensity={5.0} color="#ff6b6b" />
-        
+
         <Stars radius={50} depth={30} count={5000} factor={2} saturation={0} fade speed={0.5} />
-        
+
         {/* TIERRA CON DEBUG */}
         <Earth impactCenter={impactCenter} craterRadiusKm={craterRadiusKm} />
-        
+
         <ExplosionFlash center={impactCenter} slowMotion={slowMotion} />
-        
-        <ImpactRings 
-          center={impactCenter} 
-          craterR={craterRadiusKm} 
-          severeR={severeRadiusKm} 
-          moderateR={moderateRadiusKm} 
+
+        <ImpactRings
+          center={impactCenter}
+          craterR={craterRadiusKm}
+          severeR={severeRadiusKm}
+          moderateR={moderateRadiusKm}
         />
-        
-        <DynamicWave 
-          center={impactCenter} 
-          baseRadiusKm={craterRadiusKm * 0.4} 
-          color="#ff0000" 
-          slowMotion={slowMotion} 
+
+        <DynamicWave
+          center={impactCenter}
+          baseRadiusKm={craterRadiusKm * 0.4}
+          color="#ff0000"
+          slowMotion={slowMotion}
           isShockwave={true}
         />
-        <DynamicWave 
-          center={impactCenter} 
-          baseRadiusKm={craterRadiusKm * 0.8} 
-          color="#ff3333" 
-          slowMotion={slowMotion} 
+        <DynamicWave
+          center={impactCenter}
+          baseRadiusKm={craterRadiusKm * 0.8}
+          color="#ff3333"
+          slowMotion={slowMotion}
           isShockwave={true}
         />
-        <DynamicWave 
-          center={impactCenter} 
-          baseRadiusKm={severeRadiusKm} 
-          color="#ff6600" 
-          slowMotion={slowMotion} 
+        <DynamicWave
+          center={impactCenter}
+          baseRadiusKm={severeRadiusKm}
+          color="#ff6600"
+          slowMotion={slowMotion}
         />
-        <DynamicWave 
-          center={impactCenter} 
-          baseRadiusKm={moderateRadiusKm} 
-          color="#ff9900" 
-          slowMotion={slowMotion} 
+        <DynamicWave
+          center={impactCenter}
+          baseRadiusKm={moderateRadiusKm}
+          color="#ff9900"
+          slowMotion={slowMotion}
         />
-        
-        <ShockwaveParticles 
-          center={impactCenter} 
-          slowMotion={slowMotion} 
+
+        <ShockwaveParticles
+          center={impactCenter}
+          slowMotion={slowMotion}
         />
-        
+
         <OrbitControls enablePan={false} />
       </Canvas>
     </div>
