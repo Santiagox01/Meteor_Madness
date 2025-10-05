@@ -1,7 +1,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState } from "react";
 
 export interface LocalImpactProps {
   lat: number;
@@ -42,7 +42,7 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
   const specularMap = useTexture(EARTH_TEXTURES.specular);
   const cloudsMap = useTexture(EARTH_TEXTURES.clouds);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (earthRef.current) {
       earthRef.current.rotation.y += 0.001;
     }
@@ -228,7 +228,7 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
   );
 }
 
-function ShockwaveParticles({ center, radiusKm, slowMotion }: { center: THREE.Vector3; radiusKm: number; slowMotion: boolean }) {
+function ShockwaveParticles({ center, slowMotion }: { center: THREE.Vector3; slowMotion: boolean }) {
   const particlesRef = useRef<THREE.Points>(null!);
   
   const [particles] = useState(() => {
@@ -269,7 +269,7 @@ function ShockwaveParticles({ center, radiusKm, slowMotion }: { center: THREE.Ve
     return geom;
   }, [particles]);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (!particlesRef.current) return;
     
     const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
@@ -345,7 +345,7 @@ function ExplosionFlash({ center, slowMotion }: { center: THREE.Vector3; slowMot
   );
 }
 
-export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, moderateRadiusKm, isOcean, slowMotion = false }: LocalImpactProps) {
+export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, moderateRadiusKm, slowMotion = false }: LocalImpactProps) {
   const impactCenter = useMemo(() => sph2cart(lat, lon, 1), [lat, lon]);
 
   return (
@@ -402,7 +402,6 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
         {/* Partículas */}
         <ShockwaveParticles 
           center={impactCenter} 
-          radiusKm={severeRadiusKm} 
           slowMotion={slowMotion} 
         />
         
