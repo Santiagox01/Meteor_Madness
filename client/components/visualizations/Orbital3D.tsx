@@ -55,9 +55,9 @@ function AsteroidOrbit({ elements }: { elements: OrbitalElements }) {
   }, [orbitPoints]);
 
   return (
-    <line geometry={orbitGeometry}>
+    <lineSegments geometry={orbitGeometry}>
       <lineBasicMaterial color="#f43f5e" linewidth={2} transparent opacity={0.7} />
-    </line>
+    </lineSegments>
   );
 }
 
@@ -146,9 +146,9 @@ function ApproachCurve({ deflected, useRealOrbits }: { deflected: boolean; useRe
   }
 
   return (
-    <line geometry={geom}>
+    <lineSegments geometry={geom}>
       <lineBasicMaterial color={deflected ? "#22c55e" : "#f43f5e"} linewidth={2} />
-    </line>
+    </lineSegments>
   );
 }
 
@@ -223,7 +223,7 @@ export function Orbital3D({
     );
   }
 
-  const cameraPosition = useRealOrbits ? [8, 5, 9] : [3.5, 2, 4.5];
+  const cameraPosition: [number, number, number] = useRealOrbits ? [8, 5, 9] : [3.5, 2, 4.5];
   const cameraFov = useRealOrbits ? 55 : 55;
 
   return (
