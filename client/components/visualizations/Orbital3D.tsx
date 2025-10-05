@@ -10,8 +10,7 @@ import {
   generateOrbitPoints, 
   NASADataService,
   type OrbitalElements,
-  getEarthPosition,
-  SCENE_SCALE
+  getEarthPosition
 } from "@/lib/orbits";
 
 export interface Orbital3DProps {
