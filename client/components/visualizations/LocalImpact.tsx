@@ -26,11 +26,11 @@ function sph2cart(latDeg: number, lonDeg: number, r = 1) {
   return new THREE.Vector3(x, y, z);
 }
 
-// Texturas alternativas más confiables
+// TEXTURAS MEJORADAS - URLs directas del repositorio de three.js
 const EARTH_TEXTURES = {
-  color: "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg",
-  specular: "https://threejs.org/examples/textures/planets/earth_specular_2048.jpg", 
-  clouds: "https://threejs.org/examples/textures/planets/earth_clouds_2048.png"
+  color: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg",
+  specular: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_specular_2048.jpg", 
+  clouds: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_clouds_2048.png"
 };
 
 function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
@@ -53,24 +53,24 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
 
   return (
     <group>
-      {/* Tierra principal con texturas */}
+      {/* Tierra principal con texturas MEJORADAS */}
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhongMaterial
           map={colorMap}
           specularMap={specularMap}
-          specular={new THREE.Color(0x222222)}
-          shininess={10}
+          specular={new THREE.Color(0x333333)}
+          shininess={15} {/* AUMENTADO para más reflejo */}
         />
       </mesh>
       
-      {/* Capa de nubes */}
+      {/* Capa de nubes MEJORADA */}
       <mesh ref={cloudsRef}>
         <sphereGeometry args={[1.005, 64, 64]} />
         <meshPhongMaterial
           map={cloudsMap}
           transparent
-          opacity={0.4}
+          opacity={0.6} {/* AUMENTADO para más visibilidad */}
           depthWrite={false}
         />
       </mesh>
