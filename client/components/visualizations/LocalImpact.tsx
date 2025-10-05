@@ -43,7 +43,7 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
     const gradient = context.createLinearGradient(0, 0, 256, 256);
     gradient.addColorStop(0, '#1e40af'); // Azul
     gradient.addColorStop(0.5, '#4ade80'); // Verde  
-    gradient.addColorStop(1, '#1e40af'); // Azul
+    gradient.addColorStop(1, '#00cffdff'); // Azul
     
     context.fillStyle = gradient;
     context.fillRect(0, 0, 256, 256);
@@ -51,7 +51,7 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
     // Añadir texto de debug
     context.fillStyle = 'white';
     context.font = '20px Arial';
-    context.fillText('🌍 TEXTURA FUNCIONA', 30, 128);
+    context.fillText('', 30, 128);
     
     const texture = new THREE.CanvasTexture(canvas);
     console.log("✅ Textura de debug creada");
