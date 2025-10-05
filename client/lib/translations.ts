@@ -50,6 +50,48 @@ export interface Translations {
   language: string;
   english: string;
   spanish: string;
+  // Simulation page translations
+  energy: string;
+  exajoules: string;
+  yield: string;
+  megatons: string;
+  crater: string;
+  km: string;
+  blastRadius: string;
+  lightDamage: string;
+  seismicMagnitude: string;
+  gigatons: string;
+  torinoScale: string;
+  asteroidEarthDistance: string;
+  lunarDistances: string;
+  relativeVelocity: string;
+  kmPerS: string;
+  kmPerH: string;
+  estimatedArrival: string;
+  orbitalCrossingTime: string;
+  avoidanceAchieved: string;
+  impactLikely: string;
+  mPerS: string;
+  shift: string;
+  orbitalSimulation: string;
+  trajectoryCenter: string;
+  simulationDescription: string;
+  goToImpact: string;
+  sendToMission: string;
+  loadAsteroid: string;
+  selectNEO: string;
+  meters: string;
+  slowMotionPlayback: string;
+  impactElevation: string;
+  metersAboveSeaLevel: string;
+  operationalFlow: string;
+  operationalStep1: string;
+  operationalStep2: string;
+  operationalStep3: string;
+  telemetry: string;
+  // Time and formatting
+  hours: string;
+  imminent: string;
 }
 
 export const translations: Record<'es' | 'en', Translations> = {
@@ -101,7 +143,48 @@ export const translations: Record<'es' | 'en', Translations> = {
     instrumentalPrecision: "Precisión instrumental (1-10)",
     language: "Idioma",
     english: "English",
-    spanish: "Español"
+    spanish: "Español",
+    // Simulation page translations
+    energy: "Energía",
+    exajoules: "exajulios",
+    yield: "Potencia",
+    megatons: "megatones",
+    crater: "Cráter",
+    km: "km",
+    blastRadius: "Radio de explosión",
+    lightDamage: "Daño ligero",
+    seismicMagnitude: "Magnitud sísmica",
+    gigatons: "gigatones",
+    torinoScale: "Escala Torino",
+    asteroidEarthDistance: "Distancia asteroide-Tierra",
+    lunarDistances: "distancias lunares",
+    relativeVelocity: "Velocidad relativa",
+    kmPerS: "km/s",
+    kmPerH: "km/h",
+    estimatedArrival: "Llegada estimada",
+    orbitalCrossingTime: "Tiempo de cruce orbital",
+    avoidanceAchieved: "Evasión lograda",
+    impactLikely: "Impacto probable",
+    mPerS: "m/s",
+    shift: "desplazamiento",
+    orbitalSimulation: "Simulación orbital",
+    trajectoryCenter: "Centro de trayectorias",
+    simulationDescription: "Monitoreo en tiempo real de trayectorias, evaluación de maniobras de deflexión y análisis de impacto localizado.",
+    goToImpact: "Ir al impacto",
+    sendToMission: "Enviar a misión",
+    loadAsteroid: "Cargar asteroide",
+    selectNEO: "Seleccionar NEO",
+    meters: "metros",
+    slowMotionPlayback: "Reproducción en cámara lenta",
+    impactElevation: "Elevación de impacto",
+    metersAboveSeaLevel: "metros sobre el nivel del mar",
+    operationalFlow: "Flujo operativo",
+    operationalStep1: "Detectar y rastrear objetos NEO",
+    operationalStep2: "Evaluar riesgo y planificar misión",
+    operationalStep3: "Ejecutar maniobras de deflexión",
+    telemetry: "Telemetría",
+    hours: "horas",
+    imminent: "inminente"
   },
   en: {
     missionCenter: "Mission Center",
@@ -151,7 +234,48 @@ export const translations: Record<'es' | 'en', Translations> = {
     instrumentalPrecision: "Instrumental Precision (1-10)",
     language: "Language",
     english: "English",
-    spanish: "Español"
+    spanish: "Español",
+    // Simulation page translations
+    energy: "Energy",
+    exajoules: "exajoules",
+    yield: "Yield",
+    megatons: "megatons",
+    crater: "Crater",
+    km: "km",
+    blastRadius: "Blast radius",
+    lightDamage: "Light damage",
+    seismicMagnitude: "Seismic magnitude",
+    gigatons: "gigatons",
+    torinoScale: "Torino Scale",
+    asteroidEarthDistance: "Asteroid-Earth distance",
+    lunarDistances: "lunar distances",
+    relativeVelocity: "Relative velocity",
+    kmPerS: "km/s",
+    kmPerH: "km/h",
+    estimatedArrival: "Estimated arrival",
+    orbitalCrossingTime: "Orbital crossing time",
+    avoidanceAchieved: "Avoidance achieved",
+    impactLikely: "Impact likely",
+    mPerS: "m/s",
+    shift: "shift",
+    orbitalSimulation: "Orbital simulation",
+    trajectoryCenter: "Trajectory Center",
+    simulationDescription: "Real-time trajectory monitoring, deflection maneuver assessment, and localized impact analysis.",
+    goToImpact: "Go to impact",
+    sendToMission: "Send to mission",
+    loadAsteroid: "Load asteroid",
+    selectNEO: "Select NEO",
+    meters: "meters",
+    slowMotionPlayback: "Slow motion playback",
+    impactElevation: "Impact elevation",
+    metersAboveSeaLevel: "meters above sea level",
+    operationalFlow: "Operational flow",
+    operationalStep1: "Detect and track NEO objects",
+    operationalStep2: "Assess risk and plan mission",
+    operationalStep3: "Execute deflection maneuvers",
+    telemetry: "Telemetry",
+    hours: "hours",
+    imminent: "imminent"
   }
 };
 

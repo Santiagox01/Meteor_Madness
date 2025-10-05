@@ -272,9 +272,9 @@ function Planet({ name, orbitColor, simTimeSec, speedFactor, setEarthPos, radius
   return (
     <group>
       {/* Órbita elíptica real */}
-      <line geometry={orbitGeometry}>
+      <lineSegments geometry={orbitGeometry}>
         <lineBasicMaterial color={orbitColor} transparent opacity={0.3} linewidth={1} />
-      </line>
+      </lineSegments>
       
       {/* Planeta en posición orbital actual */}
       <group position={[currentPosition.x, currentPosition.y, currentPosition.z]}>
@@ -336,14 +336,14 @@ function AsteroidOrbit({ elements, deflected }: { elements: OrbitalElements; def
   if (!elements) return null;
 
   return (
-    <line geometry={orbitGeometry}>
+    <lineSegments geometry={orbitGeometry}>
       <lineBasicMaterial 
         color={deflected ? "#22c55e" : "#f43f5e"} 
         linewidth={2} 
         transparent 
         opacity={0.7} 
       />
-    </line>
+    </lineSegments>
   );
 }
 
