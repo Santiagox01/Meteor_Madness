@@ -64,7 +64,7 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
   const specularMap = useTexture(EARTH_TEXTURES.specular);
   const cloudsMap = useTexture(EARTH_TEXTURES.clouds);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (earthRef.current) {
       earthRef.current.rotation.y += 0.001;
     }
@@ -112,7 +112,6 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
 
 function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: number }) {
   const craterRef = useRef<THREE.Mesh>(null!);
-  const [visible, setVisible] = useState(true);
   
   const geometry = useMemo(() => {
     // Cráter más grande y visible
@@ -179,9 +178,7 @@ function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Ve
     
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     return (
-      <line geometry={geom}>
-        <lineBasicMaterial color={color} linewidth={width} />
-      </line>
+      <primitive object={new THREE.Line(geom, new THREE.LineBasicMaterial({ color, linewidth: width }))} />
     );
   };
 
@@ -189,7 +186,7 @@ function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Ve
     if (ringsRef.current) {
       // Efecto pulsante en los anillos
       const pulse = 0.8 + 0.2 * Math.sin(clock.getElapsedTime() * 2);
-      ringsRef.current.children.forEach((child, index) => {
+      ringsRef.current.children.forEach((child) => {
         if (child instanceof THREE.Line && child.material) {
           (child.material as THREE.LineBasicMaterial).opacity = pulse;
         }
@@ -257,7 +254,7 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
   );
 }
 
-function ShockwaveParticles({ center, radiusKm, slowMotion }: { center: THREE.Vector3; radiusKm: number; slowMotion: boolean }) {
+function ShockwaveParticles({ slowMotion }: { slowMotion: boolean }) {
   const particlesRef = useRef<THREE.Points>(null!);
   
   const [particles] = useState(() => {
@@ -293,7 +290,7 @@ function ShockwaveParticles({ center, radiusKm, slowMotion }: { center: THREE.Ve
     return geom;
   }, [particles]);
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (!particlesRef.current) return;
     
     const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
@@ -373,7 +370,7 @@ function ExplosionFlash({ center, slowMotion }: { center: THREE.Vector3; slowMot
   );
 }
 
-export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, moderateRadiusKm, isOcean, slowMotion = false }: LocalImpactProps) {
+export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, moderateRadiusKm, slowMotion = false }: LocalImpactProps) {
   const impactCenter = useMemo(() => sph2cart(lat, lon, 1), [lat, lon]);
 
   return (
@@ -429,8 +426,6 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
         
         {/* Partículas de escombros */}
         <ShockwaveParticles 
-          center={impactCenter} 
-          radiusKm={severeRadiusKm} 
           slowMotion={slowMotion} 
         />
         
