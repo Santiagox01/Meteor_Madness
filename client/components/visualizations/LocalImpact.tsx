@@ -41,16 +41,19 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
 
     const gradient = context.createLinearGradient(0, 0, 256, 256);
 
-    // Gradiente mejorado para la Tierra
-    gradient.addColorStop(0, '#1e3a8a');     // Azul marino profundo (océanos)
-    gradient.addColorStop(0.2, '#2563eb');   // Azul oceánico
-    gradient.addColorStop(0.4, '#4a99de');   // Azul claro (mares)
-    gradient.addColorStop(0.5, '#0e801f');   // Verde bosque
-    gradient.addColorStop(0.6, '#22c55e');   // Verde tierra
-    gradient.addColorStop(0.7, '#f59e0b');   // Marrón desierto
-    gradient.addColorStop(0.8, '#d97706');   // Marrón tierra
-    gradient.addColorStop(0.9, '#854d0e');   // Marrón montañas
-    gradient.addColorStop(1, '#1e40af');     // Azul de regreso
+    // Distribución más realista de la Tierra
+    gradient.addColorStop(0, '#1e3a8a');     // Océano profundo
+    gradient.addColorStop(0.15, '#2563eb');  // Océano
+    gradient.addColorStop(0.3, '#3b82f6');   // Mar continental
+    gradient.addColorStop(0.35, '#0e801f');  // Bosques densos
+    gradient.addColorStop(0.45, '#16a34a');  // Tierras verdes
+    gradient.addColorStop(0.55, '#ca8a04');  // Desiertos
+    gradient.addColorStop(0.65, '#a16207');  // Tierras áridas
+    gradient.addColorStop(0.75, '#57534e');  // Montañas
+    gradient.addColorStop(0.85, '#374151');  // Montañas rocosas
+    gradient.addColorStop(0.9, '#1e40af');   // Océano profundo
+    gradient.addColorStop(1, '#1e3a8a');     // Océano profundo
+    
 
     context.fillStyle = gradient;
     context.fillRect(0, 0, 256, 256);
