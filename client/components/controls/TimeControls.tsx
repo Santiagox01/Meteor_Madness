@@ -17,7 +17,15 @@ export interface TimeControlsProps {
   onReset?: () => void;
 }
 
-const speeds = [1, 10, 100, 1000, 10000];
+// Speed options with labels and values
+const speedOptions = [
+  { value: 1, label: "1x" },
+  { value: 100, label: "100x" },
+  { value: 86400, label: "1día/seg" }, // 1 day = 86400 seconds
+  { value: 259200, label: "3días/seg" }, // 3 days = 259200 seconds
+  { value: 604800, label: "1semana/seg" }, // 1 week = 604800 seconds  
+  { value: 2592000, label: "1mes/seg" } // 1 month ≈ 30 days = 2592000 seconds
+];
 
 export default function TimeControls({ playing, onTogglePlay, speed, onChangeSpeed, simTimeSec, onGoToImpact, cameraMode, onCameraMode, onFullscreen, onReset }: TimeControlsProps) {
   const simDate = new Date(simTimeSec * 1000).toISOString().slice(0, 16).replace("T", " ");
@@ -28,8 +36,10 @@ export default function TimeControls({ playing, onTogglePlay, speed, onChangeSpe
         <div className="flex items-center gap-2">
           <Label>Velocidad</Label>
           <div className="flex gap-1">
-            {speeds.map((s)=> (
-              <Button key={s} size="sm" variant={s===speed?"default":"outline"} onClick={()=>onChangeSpeed(s)}>x{s}</Button>
+            {speedOptions.map((option)=> (
+              <Button key={option.value} size="sm" variant={option.value===speed?"default":"outline"} onClick={()=>onChangeSpeed(option.value)}>
+                {option.label}
+              </Button>
             ))}
           </div>
         </div>
