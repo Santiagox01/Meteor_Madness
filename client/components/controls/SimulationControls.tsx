@@ -55,13 +55,13 @@ export default function SimulationControls({
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Control
-                label="Diameter (m)"
-                tooltip="Physical diameter of the asteroid"
-                value={params.diameterMeters}
-                onChange={(v) => update("diameterMeters", v)}
-                min={10}
-                max={50000}
-                step={10}
+                label="Diameter (km)"
+                tooltip="Physical diameter of the asteroid in kilometers"
+                value={params.diameterKilometers}
+                onChange={(v) => update("diameterKilometers", v)}
+                min={0.01}
+                max={50}
+                step={0.01}
               />
               <Control
                 label="Density (kg/m³)"
