@@ -2,16 +2,20 @@ import { Link, NavLink } from "react-router-dom";
 import { RocketIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { to: "/", label: "Inicio", emoji: "🏠" },
-  { to: "/asteroids", label: "Asteroides", emoji: "🪐" },
-  { to: "/simulation", label: "Simulación Orbital", emoji: "🌍" },
-  { to: "/mission", label: "Centro de Misión", emoji: "🛰️" },
-  { to: "/academy", label: "Academia", emoji: "📚" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 export default function Header() {
+  const { t } = useLanguage();
+  
+  const navItems = [
+    { to: "/", label: t.home, emoji: "🏠" },
+    { to: "/asteroids", label: t.asteroids, emoji: "🪐" },
+    { to: "/simulation", label: t.orbitalSimulation, emoji: "🌍" },
+    { to: "/mission", label: t.missionCenter, emoji: "🛰️" },
+    { to: "/academy", label: t.academy, emoji: "📚" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-6">
@@ -43,13 +47,14 @@ export default function Header() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <Link to="/simulation" className="hidden md:block">
             <Button variant="outline" className="border-primary/40 text-primary hover:bg-primary/20">
-              Lanzar simulación
+              {t.launchSimulation}
             </Button>
           </Link>
           <Link to="/mission">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">Centro de misión</Button>
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">{t.missionCenter}</Button>
           </Link>
         </div>
       </div>
