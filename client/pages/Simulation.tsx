@@ -179,12 +179,12 @@ export default function Simulation() {
 
   const metrics = useMemo(
     () => [
-      { label: t.energy, value: `${(impact.kineticEnergyJ / 1e18).toFixed(3)} ${t.exajoules}` },
-      { label: t.yield, value: `${impact.tntMegatons.toFixed(1)} ${t.megatons}` },
-      { label: t.crater, value: `${impact.craterDiameterKm.toFixed(1)} ${t.km}` },
-      { label: t.blastRadius, value: `${impact.blast5psiRadiusKm.toFixed(1)} ${t.km}` },
-      { label: t.lightDamage, value: `${impact.lightDamageRadiusKm.toFixed(1)} ${t.km}` },
-      { label: t.seismicMagnitude, value: `${impact.estSeismicMagnitude.toFixed(1)}` },
+      { label: t.energy, value: `${(impact.kineticEnergyJ / 1e18).toFixed(2)} ${t.exajoules}` },
+      { label: t.yield, value: `${impact.tntMegatons.toFixed(2)} ${t.megatons}` },
+      { label: t.crater, value: `${impact.craterDiameterKm.toFixed(2)} ${t.km}` },
+      { label: t.blastRadius, value: `${impact.blast5psiRadiusKm.toFixed(2)} ${t.km}` },
+      { label: t.lightDamage, value: `${impact.lightDamageRadiusKm.toFixed(2)} ${t.km}` },
+      { label: t.seismicMagnitude, value: `${impact.estSeismicMagnitude.toFixed(2)}` },
       { label: t.mass, value: `${(impact.massKg / 1e9).toFixed(2)} ${t.gigatons}` },
       { label: t.torinoScale, value: `${impact.torinoScale} / 10` },
     ],
@@ -213,7 +213,7 @@ export default function Simulation() {
     {
       title: t.mitigation,
       value: deflectionOutcome.avoidsImpact ? t.avoidanceAchieved : t.impactLikely,
-      sub: `Δv ${deflection.deltaVMS.toFixed(1)} ${t.mPerS} · ${t.shift} ${deflectionOutcome.alongTrackShiftKm.toFixed(0)} ${t.km}`,
+      sub: `Δv ${deflection.deltaVMS.toFixed(2)} ${t.mPerS} · ${t.shift} ${deflectionOutcome.alongTrackShiftKm.toFixed(2)} ${t.km}`,
       icon: ShieldCheck,
     },
   ];
@@ -276,7 +276,7 @@ export default function Simulation() {
             <option value="">{t.selectNEO}</option>
             {presets.map((neo: any) => (
               <option key={neo.id} value={neo.id}>
-                {neo.name} · {((neo.estimated_diameter?.meters?.estimated_diameter_max ?? 0) / 1000).toFixed(3)} {t.km}
+                {neo.name} · {((neo.estimated_diameter?.meters?.estimated_diameter_max ?? 0) / 1000).toFixed(2)} {t.km}
               </option>
             ))}
           </select>
@@ -331,6 +331,7 @@ export default function Simulation() {
               deflection={deflection}
               showDeflection={showDeflection}
               goToImpactSignal={goToImpactSignal}
+              approachDate={neoData?.close_approach_data?.[0]?.close_approach_date}
             />
           </div>
           <div className="space-panel rounded-3xl p-3">
@@ -355,7 +356,7 @@ export default function Simulation() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                {elevation.value?.USGS_Elevation_Point_Query_Service?.Elevation?.toFixed?.(1)} {t.metersAboveSeaLevel}
+                {elevation.value?.USGS_Elevation_Point_Query_Service?.Elevation?.toFixed?.(2)} {t.metersAboveSeaLevel}
               </CardContent>
             </Card>
           )}
