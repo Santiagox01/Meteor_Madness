@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Stars, useTexture } from "@react-three/drei";
+import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useMemo, useRef, useState } from "react";
 
@@ -150,9 +150,9 @@ function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Ve
       points.push(new THREE.Vector3(x, y, z));
     }
     
-    const geom = new THREE.BufferGeometry().setFromPoints(points);
     return (
-      <line geometry={geom}>
+      <line>
+        <bufferGeometry attach="geometry" ref={ref => ref && ref.setFromPoints(points)} />
         <lineBasicMaterial color={color} linewidth={width} />
       </line>
     );
