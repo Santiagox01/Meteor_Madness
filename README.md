@@ -1,6 +1,6 @@
 # Impactor-2025 - Code Nebula 🚀
 
-Una plataforma inmersiva de defensa planetaria que combina simulación orbital, análisis de NEOs (Near Earth Objects) y estrategias de mitigación. Visualiza trayectorias heliocéntricas, controla la escala temporal y ejecuta misiones de deflección de asteroides con herramientas científicamente fundamentadas.
+Una plataforma inmersiva de defensa planetaria que combina simulación orbital avanzada, análisis geológico de impactos y estrategias de mitigación de NEOs (Near Earth Objects). Integra datos de NASA y USGS para visualizar trayectorias heliocéntricas, evaluar efectos geológicos locales y ejecutar misiones de deflección con modelos físicos científicamente fundamentados.
 
 ## ✨ Características Principales
 
@@ -27,6 +27,15 @@ Una plataforma inmersiva de defensa planetaria que combina simulación orbital, 
 - Análisis de efectos ambientales
 - Protocolos de respuesta y mitigación
 - Recursos multimedia para divulgación científica
+
+### 🌋 **Análisis de Impacto Geológico**
+- **Modelos de Crateración:** Cálculos de diámetro de cráter basados en energía de impacto usando ecuaciones de scaling geológico
+- **Efectos Sísmicos:** Estimación de magnitud sísmica utilizando modelos de acoplamiento de energía cinética-sísmica y escalas de Gutenberg-Richter
+- **Datos de Elevación USGS:** Integración con la API de elevación del Servicio Geológico de Estados Unidos para análisis topográfico preciso
+- **Zonificación de Daños:** Cálculo de radios de devastación (5 psi, daños ligeros/moderados) con modelos de explosión nuclear equivalente
+- **Análisis de Ondas de Choque:** Simulación visual 3D de propagación de ondas sísmicas y atmosféricas desde el punto de impacto
+- **Efectos por Tipo de Terreno:** Diferenciación entre impactos oceánicos y terrestres con consideraciones geológicas específicas
+- **Estimación TNT Equivalente:** Conversión de energía cinética a megatones TNT para evaluación comparativa de destructividad
 
 ## 🚀 Instalación y Configuración
 
@@ -105,13 +114,13 @@ meteor-madness-impactor-2025/
 ## 🌐 API y Fuentes de Datos
 
 ### APIs Externas
-- **NASA NEO API:** Datos de asteroides cercanos a la Tierra
-- **USGS Elevation API:** Datos de elevación para ubicaciones de impacto
+- **NASA NEO API:** Datos de asteroides cercanos a la Tierra, órbitas y características físicas
+- **USGS Elevation API:** Datos de elevación terrestre precisos para análisis de impacto local y topográfico
 
 ### Funciones Serverless (Netlify Functions)
-- `/api/neo/browse` - Lista asteroides con paginación
-- `/api/neo/{id}` - Detalles de un asteroide específico
-- `/api/usgs/elevation` - Consulta de elevación por coordenadas
+- `/api/neo/browse` - Lista asteroides con paginación y filtrado por peligrosidad
+- `/api/neo/{id}` - Detalles específicos de un asteroide incluyendo parámetros orbitales
+- `/api/usgs/elevation` - Consulta de elevación topográfica por coordenadas geográficas
 
 ## 🎨 Tecnologías Utilizadas
 
@@ -146,20 +155,21 @@ El cambio de idioma se realiza mediante el selector en la esquina superior derec
 
 ### Visualización 3D
 - Simulación del sistema solar con órbitas planetarias reales
-- Representación de trayectorias de asteroides
-- Efectos visuales de impacto y deflección
-- Controles de cámara interactivos
+- Representación de trayectorias de asteroides con precisión temporal
+- Efectos visuales de impacto y deflección en tiempo real
+- Controles de cámara interactivos y escalado temporal dinámico
 
-### Modelos Físicos
-- Cálculos de energía cinética de impacto
-- Estimación de tamaño de cráter
-- Análisis de ondas sísmicas
-- Evaluación de efectos atmosféricos
+### Modelos Físicos y Geológicos
+- **Energía Cinética:** Cálculos precisos de energía de impacto basados en masa, velocidad y densidad del asteroide
+- **Crateración:** Modelos de scaling para estimación de diámetro de cráter usando la ecuación D ≈ 1.8 * (E/10^15)^0.22
+- **Efectos Sísmicos:** Análisis de magnitud sísmica con modelos de acoplamiento energético y escalas Gutenberg-Richter
+- **Ondas de Sobrepresión:** Cálculos de radios de daño atmosférico usando modelos de explosión nuclear (5 psi, daño ligero)
+- **Análisis Topográfico:** Integración de datos USGS para consideración de efectos locales del terreno
 
 ### Datos en Tiempo Real
-- Conexión con APIs oficiales de NASA
-- Cache inteligente para mejor rendimiento
-- Fallbacks para garantizar disponibilidad
+- Conexión con APIs oficiales de NASA y USGS
+- Cache inteligente para mejor rendimiento y disponibilidad offline
+- Fallbacks automáticos para garantizar funcionamiento continuo
 
 ## 🔧 Configuración para Producción
 
@@ -194,10 +204,11 @@ NASA_API_KEY=tu_api_key_de_nasa
 - Información detallada de cada objeto
 
 ### 🌍 **Simulación Orbital**
-- Visualización 3D del sistema solar
-- Controles de tiempo y escala
-- Simulación de deflección de asteroides
-- Panel de métricas en tiempo real
+- Visualización 3D del sistema solar con posiciones planetarias precisas
+- Controles de tiempo y escala para análisis temporal detallado
+- Simulación de deflección de asteroides con múltiples estrategias
+- Panel de métricas en tiempo real con cálculos de impacto geológico
+- Modelado de efectos sísmicos y crateración local
 
 ### 🛰️ **Centro de Misión**
 - Selección de escenarios operativos
@@ -234,6 +245,6 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más det
 
 ---
 
-**Impactor-2025** es una herramienta educativa y de investigación desarrollada con fines científicos. Los cálculos y simulaciones son aproximaciones basadas en modelos simplificados y no deben usarse para toma de decisiones reales de defensa planetaria.
+**Impactor-2025** es una herramienta educativa y de investigación desarrollada con fines científicos. Los cálculos de impacto, modelos de crateración, efectos sísmicos y simulaciones geológicas son aproximaciones basadas en modelos simplificados y no deben usarse para toma de decisiones reales de defensa planetaria o evaluación de riesgos geológicos.
 
 🚀 **¡Defiende la Tierra con ciencia y tecnología!** 🌍
