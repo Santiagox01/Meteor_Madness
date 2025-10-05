@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Stars } from "@react-three/drei";
+import { OrbitControls, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useMemo, useRef, useState, useEffect } from "react";
 
@@ -26,45 +26,23 @@ function sph2cart(latDeg: number, lonDeg: number, r = 1) {
   return new THREE.Vector3(x, y, z);
 }
 
-// Texturas más confiables
+// Texturas alternativas más confiables
 const EARTH_TEXTURES = {
-  color: "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/textures/planets/earth_atmos_2048.jpg",
-  specular: "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/textures/planets/earth_specular_2048.jpg",
-  clouds: "https://cdn.jsdelivr.net/npm/three@0.132.2/examples/textures/planets/earth_clouds_2048.png"
+  color: "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg",
+  specular: "https://threejs.org/examples/textures/planets/earth_specular_2048.jpg", 
+  clouds: "https://threejs.org/examples/textures/planets/earth_clouds_2048.png"
 };
-
-function useTexture(url: string) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null);
-  
-  useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin("anonymous");
-    loader.load(
-      url,
-      (loadedTexture) => {
-        loadedTexture.colorSpace = THREE.SRGBColorSpace;
-        setTexture(loadedTexture);
-      },
-      undefined,
-      (error) => {
-        console.warn(`Failed to load texture: ${url}`, error);
-        setTexture(null);
-      }
-    );
-  }, [url]);
-  
-  return texture;
-}
 
 function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
   const earthRef = useRef<THREE.Mesh>(null!);
   const cloudsRef = useRef<THREE.Mesh>(null!);
   
+  // Usar useTexture de drei que es más robusto
   const colorMap = useTexture(EARTH_TEXTURES.color);
   const specularMap = useTexture(EARTH_TEXTURES.specular);
   const cloudsMap = useTexture(EARTH_TEXTURES.clouds);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (earthRef.current) {
       earthRef.current.rotation.y += 0.001;
     }
@@ -75,33 +53,29 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
 
   return (
     <group>
-      {/* Tierra principal */}
+      {/* Tierra principal con texturas */}
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhongMaterial
           map={colorMap}
           specularMap={specularMap}
-          specular={new THREE.Color(0x333333)}
-          shininess={5}
-          transparent={true}
-          opacity={1}
+          specular={new THREE.Color(0x222222)}
+          shininess={10}
         />
       </mesh>
       
-      {/* Nubes */}
-      {cloudsMap && (
-        <mesh ref={cloudsRef}>
-          <sphereGeometry args={[1.005, 64, 64]} />
-          <meshPhongMaterial
-            map={cloudsMap}
-            transparent
-            opacity={0.4}
-            depthWrite={false}
-          />
-        </mesh>
-      )}
+      {/* Capa de nubes */}
+      <mesh ref={cloudsRef}>
+        <sphereGeometry args={[1.005, 64, 64]} />
+        <meshPhongMaterial
+          map={cloudsMap}
+          transparent
+          opacity={0.4}
+          depthWrite={false}
+        />
+      </mesh>
       
-      {/* Efecto de cráter - MÁS VISIBLE */}
+      {/* Efecto de cráter */}
       <CraterEffect 
         center={impactCenter} 
         radius={craterRadiusKm / RE} 
@@ -114,10 +88,9 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
   const craterRef = useRef<THREE.Mesh>(null!);
   
   const geometry = useMemo(() => {
-    // Cráter más grande y visible
-    const craterSize = Math.max(0.05, radius * 2); // Hacerlo más grande
-    const craterGeometry = new THREE.ConeGeometry(craterSize, craterSize * 0.4, 32);
-    craterGeometry.translate(0, -craterSize * 0.2, 0);
+    const craterSize = Math.max(0.08, radius * 3); // Más grande
+    const craterGeometry = new THREE.ConeGeometry(craterSize, craterSize * 0.5, 32);
+    craterGeometry.translate(0, -craterSize * 0.25, 0);
     craterGeometry.rotateX(Math.PI);
     return craterGeometry;
   }, [radius]);
@@ -130,10 +103,9 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
 
   useFrame(({ clock }) => {
     if (craterRef.current) {
-      // Efecto de brillo pulsante
-      const pulse = 0.7 + 0.3 * Math.sin(clock.getElapsedTime() * 3);
+      const pulse = 0.6 + 0.4 * Math.sin(clock.getElapsedTime() * 2);
       if (craterRef.current.material) {
-        (craterRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = pulse * 0.5;
+        (craterRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = pulse * 0.8;
       }
     }
   });
@@ -141,16 +113,16 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
   return (
     <mesh
       ref={craterRef}
-      position={center.clone().multiplyScalar(1.02)} // Más alejado de la superficie
+      position={center.clone().multiplyScalar(1.03)} // Más alejado
       quaternion={rotation}
       geometry={geometry}
     >
       <meshStandardMaterial
-        color="#8B4513"
-        roughness={0.8}
-        metalness={0.3}
-        emissive="#ff6b6b"
-        emissiveIntensity={0.5}
+        color="#5c2c0d"
+        roughness={0.7}
+        metalness={0.4}
+        emissive="#ff4500"
+        emissiveIntensity={0.8}
       />
     </mesh>
   );
@@ -159,33 +131,35 @@ function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: numbe
 function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Vector3; craterR: number; severeR: number; moderateR: number }) {
   const ringsRef = useRef<THREE.Group>(null!);
   
-  const mkRing = (radiusKm: number, color: string, width: number = 3) => {
+  const mkRing = (radiusKm: number, color: string, width: number = 4) => {
     const points: THREE.Vector3[] = [];
     const ang = radiusKm / RE;
     
-    for (let i = 0; i <= 128; i++) {
-      const t = (2 * Math.PI * i) / 128;
+    for (let i = 0; i <= 64; i++) {
+      const t = (2 * Math.PI * i) / 64;
       
-      // Simplificar el cálculo para evitar problemas
-      const x = center.x + Math.cos(t) * ang;
-      const y = center.y;
-      const z = center.z + Math.sin(t) * ang;
+      // Cálculo simplificado pero funcional
+      const lat0 = Math.asin(center.y);
+      const lon0 = Math.atan2(center.z, center.x);
       
-      // Proyectar sobre la esfera
-      const point = new THREE.Vector3(x, y, z).normalize();
-      points.push(point);
+      const x = Math.cos(lat0) * Math.cos(lon0 + t * ang);
+      const y = Math.sin(lat0);
+      const z = Math.cos(lat0) * Math.sin(lon0 + t * ang);
+      
+      points.push(new THREE.Vector3(x, y, z));
     }
     
     const geom = new THREE.BufferGeometry().setFromPoints(points);
     return (
-      <primitive object={new THREE.Line(geom, new THREE.LineBasicMaterial({ color, linewidth: width }))} />
+      <line geometry={geom}>
+        <lineBasicMaterial color={color} linewidth={width} />
+      </line>
     );
   };
 
   useFrame(({ clock }) => {
     if (ringsRef.current) {
-      // Efecto pulsante en los anillos
-      const pulse = 0.8 + 0.2 * Math.sin(clock.getElapsedTime() * 2);
+      const pulse = 0.7 + 0.3 * Math.sin(clock.getElapsedTime() * 3);
       ringsRef.current.children.forEach((child) => {
         if (child instanceof THREE.Line && child.material) {
           (child.material as THREE.LineBasicMaterial).opacity = pulse;
@@ -196,9 +170,9 @@ function ImpactRings({ center, craterR, severeR, moderateR }: { center: THREE.Ve
 
   return (
     <group ref={ringsRef}>
-      {mkRing(craterR, "#ff0000", 4)}    {/* Rojo brillante */}
-      {mkRing(severeR, "#ff8800", 3)}    {/* Naranja */}
-      {mkRing(moderateR, "#00ff00", 2)}   {/* Verde */}
+      {mkRing(craterR, "#ff0000", 5)}
+      {mkRing(severeR, "#ff6600", 4)}
+      {mkRing(moderateR, "#ffaa00", 3)}
     </group>
   );
 }
@@ -214,26 +188,26 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
     [normal]
   );
   
-  const position = useMemo(() => normal.clone().multiplyScalar(1.001), [normal]);
+  const position = useMemo(() => normal.clone().multiplyScalar(1.002), [normal]);
   const angularRadius = baseRadiusKm / RE;
-  const radius = Math.max(0.05, Math.sin(Math.min(Math.PI / 2, angularRadius))); // Mínimo más grande
-  const thickness = radius * (isShockwave ? 0.1 : 0.2); // Más grueso
+  const radius = Math.max(0.08, Math.sin(Math.min(Math.PI / 2, angularRadius)));
+  const thickness = radius * (isShockwave ? 0.15 : 0.25);
 
   useFrame((_, delta) => {
-    const speed = slowMotion ? 0.2 : 0.8;
-    phaseRef.current = (phaseRef.current + delta * speed) % 2.0;
+    const speed = slowMotion ? 0.15 : 0.6;
+    phaseRef.current = (phaseRef.current + delta * speed) % 2.5;
     
-    const scale = 1 + phaseRef.current * 3.0; // Expansión más dramática
+    const scale = 1 + phaseRef.current * 4.0;
     if (meshRef.current) {
       meshRef.current.scale.setScalar(scale);
     }
     
     if (materialRef.current) {
-      const fade = Math.max(0, 1 - phaseRef.current / 2.0);
-      materialRef.current.opacity = (isShockwave ? 1.0 : 0.8) * fade; // Más opaco
+      const fade = Math.max(0, 1 - phaseRef.current / 2.5);
+      materialRef.current.opacity = (isShockwave ? 1.0 : 0.9) * fade;
       
       if (isShockwave) {
-        const pulse = 0.7 + 0.3 * Math.sin(phaseRef.current * Math.PI * 8);
+        const pulse = 0.6 + 0.4 * Math.sin(phaseRef.current * Math.PI * 6);
         materialRef.current.opacity *= pulse;
       }
     }
@@ -241,12 +215,12 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
 
   return (
     <mesh ref={meshRef} position={position} quaternion={rotation}>
-      <ringGeometry args={[radius, radius + thickness, 64]} />
+      <ringGeometry args={[radius, radius + thickness, 48]} />
       <meshBasicMaterial 
         ref={materialRef} 
         color={color} 
         transparent 
-        opacity={isShockwave ? 1.0 : 0.8}
+        opacity={isShockwave ? 1.0 : 0.9}
         side={THREE.DoubleSide}
         blending={THREE.AdditiveBlending}
       />
@@ -254,30 +228,35 @@ function DynamicWave({ center, baseRadiusKm, color, slowMotion, isShockwave = fa
   );
 }
 
-function ShockwaveParticles({ slowMotion }: { slowMotion: boolean }) {
+function ShockwaveParticles({ center, radiusKm, slowMotion }: { center: THREE.Vector3; radiusKm: number; slowMotion: boolean }) {
   const particlesRef = useRef<THREE.Points>(null!);
   
   const [particles] = useState(() => {
-    const count = 100;
+    const count = 80;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     
     for (let i = 0; i < count; i++) {
       const i3 = i * 3;
       
-      // Distribuir partículas en una esfera
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(Math.random() * 2 - 1);
-      const r = 1 + Math.random() * 0.1;
+      // Distribución más simple alrededor del centro
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 0.1 + Math.random() * 0.2;
       
-      positions[i3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i3 + 1] = r * Math.cos(phi);
-      positions[i3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i3] = center.x + Math.cos(angle) * distance;
+      positions[i3 + 1] = center.y + (Math.random() - 0.5) * 0.1;
+      positions[i3 + 2] = center.z + Math.sin(angle) * distance;
       
-      // Colores rojo/naranja
-      colors[i3] = 1.0;     // R
-      colors[i3 + 1] = 0.3 + Math.random() * 0.4; // G
-      colors[i3 + 2] = 0.1; // B
+      // Normalizar para poner en superficie
+      const pos = new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]).normalize();
+      positions[i3] = pos.x;
+      positions[i3 + 1] = pos.y;
+      positions[i3 + 2] = pos.z;
+      
+      // Colores cálidos
+      colors[i3] = 1.0;
+      colors[i3 + 1] = 0.2 + Math.random() * 0.5;
+      colors[i3 + 2] = 0.0;
     }
     
     return { positions, colors };
@@ -290,39 +269,35 @@ function ShockwaveParticles({ slowMotion }: { slowMotion: boolean }) {
     return geom;
   }, [particles]);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
     if (!particlesRef.current) return;
     
     const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
-    const speed = slowMotion ? 0.3 : 1.0;
+    const speed = slowMotion ? 0.2 : 0.8;
     
     for (let i = 0; i < positions.length / 3; i++) {
       const i3 = i * 3;
       
-      // Mover partículas hacia afuera
-      const direction = new THREE.Vector3(
-        positions[i3],
-        positions[i3 + 1], 
-        positions[i3 + 2]
-      ).normalize();
+      const currentPos = new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]);
+      const direction = currentPos.clone().normalize();
       
-      positions[i3] += direction.x * 0.005 * speed;
-      positions[i3 + 1] += direction.y * 0.005 * speed;
-      positions[i3 + 2] += direction.z * 0.005 * speed;
+      // Mover hacia afuera
+      positions[i3] += direction.x * 0.008 * speed;
+      positions[i3 + 1] += direction.y * 0.008 * speed;
+      positions[i3 + 2] += direction.z * 0.008 * speed;
     }
     
     particlesRef.current.geometry.attributes.position.needsUpdate = true;
-    particlesRef.current.rotation.y += 0.002 * speed;
   });
 
   return (
     <points ref={particlesRef}>
       <primitive object={geometry} />
       <pointsMaterial
-        size={0.03}
+        size={0.04}
         vertexColors={true}
         transparent
-        opacity={0.8}
+        opacity={0.9}
         blending={THREE.AdditiveBlending}
         sizeAttenuation={true}
       />
@@ -336,12 +311,12 @@ function ExplosionFlash({ center, slowMotion }: { center: THREE.Vector3; slowMot
   const phaseRef = useRef(0);
   
   useFrame((_, delta) => {
-    const speed = slowMotion ? 0.5 : 2.0;
+    const speed = slowMotion ? 0.3 : 1.5;
     phaseRef.current += delta * speed;
     
-    if (phaseRef.current < 1.0) {
-      const scale = 1 + phaseRef.current * 2.0;
-      const opacity = 1.0 - phaseRef.current;
+    if (phaseRef.current < 1.5) {
+      const scale = 0.5 + phaseRef.current * 3.0;
+      const opacity = Math.max(0, 1.0 - phaseRef.current / 1.5);
       
       if (meshRef.current) {
         meshRef.current.scale.setScalar(scale);
@@ -357,11 +332,11 @@ function ExplosionFlash({ center, slowMotion }: { center: THREE.Vector3; slowMot
   });
 
   return (
-    <mesh ref={meshRef} position={center.clone().multiplyScalar(1.01)}>
-      <sphereGeometry args={[0.1, 16, 16]} />
+    <mesh ref={meshRef} position={center.clone().multiplyScalar(1.02)}>
+      <sphereGeometry args={[0.15, 12, 12]} />
       <meshBasicMaterial
         ref={materialRef}
-        color="#ffffff"
+        color="#ffff00"
         transparent
         opacity={1.0}
         blending={THREE.AdditiveBlending}
@@ -370,15 +345,15 @@ function ExplosionFlash({ center, slowMotion }: { center: THREE.Vector3; slowMot
   );
 }
 
-export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, moderateRadiusKm, slowMotion = false }: LocalImpactProps) {
+export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, moderateRadiusKm, isOcean, slowMotion = false }: LocalImpactProps) {
   const impactCenter = useMemo(() => sph2cart(lat, lon, 1), [lat, lon]);
 
   return (
     <div className="h-96 w-full rounded-lg overflow-hidden bg-[#060814]">
       <Canvas camera={{ position: [2.8, 1.8, 3.2], fov: 55 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[5, 5, 5]} intensity={2.0} />
-        <pointLight position={impactCenter.toArray()} intensity={3.0} color="#ff6b6b" />
+        <ambientLight intensity={0.6} />
+        <pointLight position={[5, 5, 5]} intensity={2.5} />
+        <pointLight position={impactCenter.toArray()} intensity={4.0} color="#ff6b6b" />
         
         <Stars radius={50} depth={30} count={5000} factor={2} saturation={0} fade speed={0.5} />
         
@@ -396,36 +371,38 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
           moderateR={moderateRadiusKm} 
         />
         
-        {/* MÚLTIPLES ondas expansivas para mayor efecto */}
+        {/* Ondas expansivas */}
         <DynamicWave 
           center={impactCenter} 
-          baseRadiusKm={craterRadiusKm * 0.3} 
+          baseRadiusKm={craterRadiusKm * 0.4} 
           color="#ff0000" 
           slowMotion={slowMotion} 
           isShockwave={true}
         />
         <DynamicWave 
           center={impactCenter} 
-          baseRadiusKm={craterRadiusKm * 0.6} 
-          color="#ff4444" 
+          baseRadiusKm={craterRadiusKm * 0.8} 
+          color="#ff3333" 
           slowMotion={slowMotion} 
           isShockwave={true}
         />
         <DynamicWave 
           center={impactCenter} 
           baseRadiusKm={severeRadiusKm} 
-          color="#ff8800" 
+          color="#ff6600" 
           slowMotion={slowMotion} 
         />
         <DynamicWave 
           center={impactCenter} 
           baseRadiusKm={moderateRadiusKm} 
-          color="#ffaa00" 
+          color="#ff9900" 
           slowMotion={slowMotion} 
         />
         
-        {/* Partículas de escombros */}
+        {/* Partículas */}
         <ShockwaveParticles 
+          center={impactCenter} 
+          radiusKm={severeRadiusKm} 
           slowMotion={slowMotion} 
         />
         
