@@ -26,8 +26,18 @@ function sph2cart(latDeg: number, lonDeg: number, r = 1) {
   return new THREE.Vector3(x, y, z);
 }
 
+<<<<<<< HEAD
+// TEXTURAS MÁS SIMPLES Y CONFIABLES
+=======
 // TEXTURAS ALTERNATIVAS - Más confiables
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
 const EARTH_TEXTURES = {
+<<<<<<< HEAD
+  color: "/textures/earth.jpg", // Textura local en public/textures/
+  // O alternativas online:
+  // color: "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg",
+  // color: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Earth_Western_Hemisphere_transparent_background.png/1024px-Earth_Western_Hemisphere_transparent_background.png"
+=======
   // Opción 1: Texturas de NASA/dominio público
   color: "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001589/GSFC_20171208_Archive_e001589~orig.jpg",
   
@@ -36,37 +46,136 @@ const EARTH_TEXTURES = {
   
   // Opción 3: Sin nubes para simplificar
   clouds: ""
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
 };
 
-function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
-  const earthRef = useRef<THREE.Mesh>(null!);
-  const cloudsRef = useRef<THREE.Mesh>(null!);
+<<<<<<< HEAD
+// NUEVA ESFERA TEXTURIZADA ALTERNATIVA
+function TexturedEarth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
+  const earthGroupRef = useRef<THREE.Group>(null!);
   
+  // Cargar textura
+  const earthTexture = useTexture(EARTH_TEXTURES.color);
+  
+  // Configurar la textura para que se repita correctamente
+  earthTexture.wrapS = THREE.RepeatWrapping;
+  earthTexture.wrapT = THREE.RepeatWrapping;
+  earthTexture.rotation = 0;
+  earthTexture.repeat.set(1, 1);
+
+  useFrame(() => {
+    if (earthGroupRef.current) {
+      earthGroupRef.current.rotation.y += 0.001;
+    }
+  });
+
+  return (
+    <group ref={earthGroupRef}>
+      {/* ESFERA PRINCIPAL CON TEXTURA - FORMA ALTERNATIVA */}
+      <mesh rotation={[0, 0, 0]}>
+        <sphereGeometry args={[1, 64, 64]} />
+        <meshStandardMaterial
+          map={earthTexture}
+          metalness={0.1}
+          roughness={0.8}
+          color={0xffffff}
+        />
+      </mesh>
+      
+      {/* EFECTO DE CRÁTER (se mantiene igual) */}
+      <CraterEffect 
+        center={impactCenter} 
+        radius={craterRadiusKm / RE} 
+      />
+    </group>
+  );
+}
+
+// OPCIÓN 2: ESFERA CON MATERIAL BÁSICO PERO FUNCIONAL
+function SimpleTexturedEarth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
+=======
+function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
+  const earthRef = useRef<THREE.Mesh>(null!);
+  
+<<<<<<< HEAD
+  const earthTexture = useTexture(EARTH_TEXTURES.color);
+  
+=======
   // Cargar solo la textura de color
   const colorMap = useTexture(EARTH_TEXTURES.color);
+
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
+  useFrame(() => {
+    if (earthRef.current) {
+      earthRef.current.rotation.y += 0.001;
+    }
+  });
+
+<<<<<<< HEAD
+  return (
+    <group>
+      {/* Esfera MUY simple con material básico */}
+      <mesh ref={earthRef}>
+        <sphereGeometry args={[1, 32, 32]} /> {/* Menos segmentos para debug */}
+        <meshBasicMaterial 
+          map={earthTexture}
+          toneMapped={false}
+        />
+      </mesh>
+      
+      <CraterEffect 
+        center={impactCenter} 
+        radius={craterRadiusKm / RE} 
+      />
+    </group>
+  );
+}
+
+// OPCIÓN 3: ESFERA CON GRADIENTE DE COLORES (fallback)
+function ColoredEarth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; craterRadiusKm: number }) {
+  const earthRef = useRef<THREE.Mesh>(null!);
 
   useFrame(() => {
     if (earthRef.current) {
       earthRef.current.rotation.y += 0.001;
     }
-    if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += 0.0015;
-    }
   });
 
+=======
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
   return (
     <group>
+<<<<<<< HEAD
+      {/* Esfera con colores en lugar de textura */}
+=======
       {/* Tierra principal - SOLO con textura de color */}
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
       <mesh ref={earthRef}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshPhongMaterial
+<<<<<<< HEAD
+          color={0x1e3a8a}      // Azul océano
+          specular={0x222222}   // Reflexiones
+          shininess={10}
+          transparent={true}
+          opacity={0.9}
+=======
           map={colorMap}
           specular={new THREE.Color(0x222222)}
           shininess={25} // Más brillo para mejor visibilidad
           color={new THREE.Color(0xffffff)} // Color base blanco
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
         />
       </mesh>
       
+<<<<<<< HEAD
+      {/* "Continentes" simulados con esferas más pequeñas */}
+      <mesh position={[0.3, 0.2, 0.4]} scale={[0.7, 0.5, 0.8]}>
+        <sphereGeometry args={[0.3, 16, 16]} />
+        <meshPhongMaterial color={0x4ade80} /> {/* Verde */}
+      </mesh>
+=======
       {/* Nubes opcionales - solo si la textura carga */}
       {EARTH_TEXTURES.clouds && (
         <mesh ref={cloudsRef}>
@@ -79,8 +188,13 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
           />
         </mesh>
       )}
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
       
-      {/* Efecto de cráter */}
+      <mesh position={[-0.4, -0.1, 0.3]} scale={[0.6, 0.4, 0.7]}>
+        <sphereGeometry args={[0.25, 16, 16]} />
+        <meshPhongMaterial color={0x4ade80} /> {/* Verde */}
+      </mesh>
+      
       <CraterEffect 
         center={impactCenter} 
         radius={craterRadiusKm / RE} 
@@ -89,7 +203,7 @@ function Earth({ impactCenter, craterRadiusKm }: { impactCenter: THREE.Vector3; 
   );
 }
 
-// ... (el resto del código se mantiene IGUAL)
+// EL RESTO DEL CÓDIGO SE MANTIENE EXACTAMENTE IGUAL
 function CraterEffect({ center, radius }: { center: THREE.Vector3; radius: number }) {
   const craterRef = useRef<THREE.Mesh>(null!);
   
@@ -352,13 +466,28 @@ export default function LocalImpact({ lat, lon, craterRadiusKm, severeRadiusKm, 
   return (
     <div className="h-96 w-full rounded-lg overflow-hidden bg-[#060814]">
       <Canvas camera={{ position: [2.8, 1.8, 3.2], fov: 55 }}>
+<<<<<<< HEAD
+        <ambientLight intensity={0.8} />
+        <pointLight position={[5, 5, 5]} intensity={3.0} />
+        <pointLight position={impactCenter.toArray()} intensity={5.0} color="#ff6b6b" />
+=======
         <ambientLight intensity={0.8} /> {/* Más luz */}
         <pointLight position={[5, 5, 5]} intensity={3.0} /> {/* Más intensidad */}
         <pointLight position={impactCenter.toArray()} intensity={5.0} color="#ff6b6b" />
+>>>>>>> 70ea7ab0faf7cc4cb09c25c33389c111b1d8a4c1
         
         <Stars radius={50} depth={30} count={5000} factor={2} saturation={0} fade speed={0.5} />
         
-        <Earth impactCenter={impactCenter} craterRadiusKm={craterRadiusKm} />
+        {/* ELIGE UNA DE ESTAS OPCIONES: */}
+        
+        {/* Opción 1: Esfera texturizada simple */}
+        <SimpleTexturedEarth impactCenter={impactCenter} craterRadiusKm={craterRadiusKm} />
+        
+        {/* Opción 2: Esfera con colores (comenta la línea de arriba y descomenta esta) */}
+        {/* <ColoredEarth impactCenter={impactCenter} craterRadiusKm={craterRadiusKm} /> */}
+        
+        {/* Opción 3: Esfera texturizada avanzada (comenta las otras) */}
+        {/* <TexturedEarth impactCenter={impactCenter} craterRadiusKm={craterRadiusKm} /> */}
         
         <ExplosionFlash center={impactCenter} slowMotion={slowMotion} />
         
