@@ -47,6 +47,11 @@ export interface Translations {
   diameter: string;
   approachDate: string;
   approachDistance: string;
+  timeUntil: string;
+  lowRisk: string;
+  mediumRisk: string;
+  highRisk: string;
+  criticalRisk: string;
   potentiallyHazardous: string;
   nonHazardous: string;
   viewDetails: string;
@@ -270,6 +275,11 @@ export const translations: Record<'es' | 'en', Translations> = {
     diameter: "Diámetro",
     approachDate: "Fecha de aproximación",
     approachDistance: "Distancia de aproximación",
+    timeUntil: "Tiempo restante",
+    lowRisk: "Bajo",
+    mediumRisk: "Medio",
+    highRisk: "Alto",
+    criticalRisk: "Crítico",
     potentiallyHazardous: "Potencialmente peligroso",
     nonHazardous: "No peligroso",
     viewDetails: "Ver detalles",
@@ -488,6 +498,11 @@ export const translations: Record<'es' | 'en', Translations> = {
     diameter: "Diameter",
     approachDate: "Approach date",
     approachDistance: "Approach distance",
+    timeUntil: "Time until",
+    lowRisk: "Low",
+    mediumRisk: "Medium",
+    highRisk: "High",
+    criticalRisk: "Critical",
     potentiallyHazardous: "Potentially hazardous",
     nonHazardous: "Non-hazardous",
     viewDetails: "View details",

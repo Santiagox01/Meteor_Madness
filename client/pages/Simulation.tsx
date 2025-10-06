@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { getAsteroidPosition, getEarthPosition, sceneUnitsToKm } from "@/lib/orbits";
+import { getAsteroidPosition, getEarthPosition, sceneUnitsToKm, getNextApproachData } from "@/lib/orbits";
 import {
   Orbit,
   GaugeCircle,
@@ -82,8 +82,12 @@ export default function Simulation() {
       const est = neoData.estimated_diameter?.meters;
       const avgMeters = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : params.diameterKilometers * 1000;
       const avgKilometers = avgMeters / 1000;
-      const velocity = Number(neoData.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second ?? params.velocityKmS);
-      const miss = neoData.close_approach_data?.[0]?.miss_distance?.kilometers;
+      
+      // Obtener la próxima aproximación futura en lugar de la primera histórica
+      const nextApproach = getNextApproachData(neoData.close_approach_data);
+      const velocity = Number(nextApproach?.relative_velocity?.kilometers_per_second ?? params.velocityKmS);
+      const miss = nextApproach?.miss_distance?.kilometers;
+      
       setParams((prev) => ({
         ...prev,
         name: neoData.name || prev.name,
@@ -226,7 +230,8 @@ export default function Simulation() {
     const est = neo.estimated_diameter?.meters;
     const avgMeters = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 : params.diameterKilometers * 1000;
     const avgKilometers = avgMeters / 1000;
-    const velocity = Number(neo.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second ?? params.velocityKmS);
+    const nextApproach = getNextApproachData(neo.close_approach_data);
+    const velocity = Number(nextApproach?.relative_velocity?.kilometers_per_second ?? params.velocityKmS);
     setParams((prev) => ({
       ...prev,
       name: neo.name ?? prev.name,
@@ -331,7 +336,7 @@ export default function Simulation() {
               deflection={deflection}
               showDeflection={showDeflection}
               goToImpactSignal={goToImpactSignal}
-              approachDate={neoData?.close_approach_data?.[0]?.close_approach_date}
+              approachDate={getNextApproachData(neoData?.close_approach_data)?.close_approach_date}
             />
           </div>
           <div className="space-panel rounded-3xl p-3">

@@ -6,9 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ShieldAlert, Telescope, Rocket, SlidersHorizontal } from "lucide-react";
+import { Sparkles, ShieldAlert, Telescope, Rocket, SlidersHorizontal, Calendar, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { organizeApproachDate, formatTimeUntilApproach, calculateApproachRiskLevel, getNextApproachData } from "@/lib/orbits";
 
 interface NeoObject {
   id: string;
@@ -101,11 +102,35 @@ export default function Asteroids() {
         {filtered.map((neo) => {
           const est = neo.estimated_diameter?.meters;
           const avgSizeKm = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 / 1000 : 0;
-          const approach = neo.close_approach_data?.[0];
+          
+          // Obtener la próxima aproximación futura en lugar de la primera histórica
+          const approach = getNextApproachData(neo.close_approach_data);
           const velocity = approach?.relative_velocity?.kilometers_per_second ? parseFloat(approach.relative_velocity.kilometers_per_second) : 0;
           const distance = distanceMetric === "lunar" 
             ? approach?.miss_distance?.lunar ? parseFloat(approach.miss_distance.lunar) : 0
             : approach?.miss_distance?.kilometers ? parseFloat(approach.miss_distance.kilometers) / 1000000 : 0;
+          
+          // Calcular nivel de riesgo
+          const approachInfo = approach?.close_approach_date 
+            ? organizeApproachDate(approach.close_approach_date, Date.now() / 1000)
+            : null;
+          const riskLevel = approachInfo && distance 
+            ? calculateApproachRiskLevel(approachInfo, distance * (distanceMetric === "lunar" ? 384400 : 1000000))
+            : 'low';
+          
+          const riskColors = {
+            low: 'bg-green-500/20 text-green-400 border-green-500/30',
+            medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', 
+            high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+            critical: 'bg-red-500/20 text-red-400 border-red-500/30'
+          };
+          
+          const riskLabels = {
+            low: t.lowRisk || 'Bajo',
+            medium: t.mediumRisk || 'Medio',
+            high: t.highRisk || 'Alto', 
+            critical: t.criticalRisk || 'Crítico'
+          };
           
           return (
             <Card key={neo.id} className="group relative overflow-hidden border-primary/20 bg-card/50 hover:bg-card/80 transition-all duration-300">
@@ -114,9 +139,14 @@ export default function Asteroids() {
                   <CardTitle className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                     {neo.name}
                   </CardTitle>
-                  <Badge variant={neo.is_potentially_hazardous_asteroid ? "destructive" : "secondary"} className="shrink-0">
-                    {neo.is_potentially_hazardous_asteroid ? t.potentiallyHazardous : t.nonHazardous}
-                  </Badge>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <Badge variant={neo.is_potentially_hazardous_asteroid ? "destructive" : "secondary"}>
+                      {neo.is_potentially_hazardous_asteroid ? t.potentiallyHazardous : t.nonHazardous}
+                    </Badge>
+                    <Badge className={`text-xs ${riskColors[riskLevel]}`}>
+                      {riskLabels[riskLevel]}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -129,10 +159,27 @@ export default function Asteroids() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Telescope className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <div className="text-muted-foreground">{t.approachDate}</div>
-                      <div className="font-medium">{approach?.close_approach_date ?? "N/A"}</div>
+                      <div className="font-medium text-xs">
+                        {approach?.close_approach_date 
+                          ? organizeApproachDate(approach.close_approach_date, Date.now() / 1000).displayDate.split(',')[0]
+                          : "N/A"
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-muted-foreground">{t.timeUntil || 'Tiempo restante'}</div>
+                      <div className="font-medium text-xs">
+                        {approach?.close_approach_date 
+                          ? formatTimeUntilApproach(organizeApproachDate(approach.close_approach_date, Date.now() / 1000).timeUntil)
+                          : "N/A"
+                        }
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
