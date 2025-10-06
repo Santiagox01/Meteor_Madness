@@ -1,250 +1,256 @@
 # Impactor-2025 - Code Nebula 🚀
 
-Una plataforma inmersiva de defensa planetaria que combina simulación orbital avanzada, análisis geológico de impactos y estrategias de mitigación de NEOs (Near Earth Objects). Integra datos de NASA y USGS para visualizar trayectorias heliocéntricas, evaluar efectos geológicos locales y ejecutar misiones de deflección con modelos físicos científicamente fundamentados.
+An immersive planetary defense platform that combines advanced orbital simulation, geological impact analysis, and NEO (Near Earth Objects) mitigation strategies. Integrates NASA and USGS data to visualize heliocentric trajectories, evaluate local geological effects, and execute deflection missions with scientifically grounded physical models.
 
-## ✨ Características Principales
+## ✨ Main Features
 
-### 🪐 **Catálogo NEO en Tiempo Real**
-- Datos actualizados de la NASA NEO API
-- Filtrado por peligrosidad, tamaño y distancia mínima
-- Clasificación según la escala de Torino
-- Información detallada de trayectorias y aproximaciones
+### 🪐 **Real-Time NEO Catalog**
+- Updated data from NASA NEO API
+- Filtering by hazard level, size, and minimum distance
+- Classification according to the Torino Scale
+- Detailed trajectory and approach information
 
-### 🌍 **Simulación Orbital Avanzada**
-- Visualización 3D del sistema solar en tiempo real
-- Simulación de deflección de asteroides
-- Modelos físicos de impacto local
-- Controles de tiempo y escalas ajustables
+### 🌍 **Advanced Orbital Simulation**
+- Real-time 3D solar system visualization
+- Asteroid deflection simulation
+- Local impact physical models
+- Adjustable time and scale controls
 
-### 🛰️ **Centro de Misión**
-- Planificación de estrategias de mitigación
-- Evaluación de herramientas: impactador cinético, tractor gravitacional, explosión nuclear
-- Análisis de probabilidades de éxito
-- Reportes ejecutivos y protocolos operativos
+### 🛰️ **Mission Center**
+- Mitigation strategy planning
+- Tool evaluation: kinetic impactor, gravity tractor, nuclear explosion
+- Success probability analysis
+- Executive reports and operational protocols
 
-### 📚 **Academia de Defensa Planetaria**
-- Material educativo sobre impactos históricos
-- Análisis de efectos ambientales
-- Protocolos de respuesta y mitigación
-- Recursos multimedia para divulgación científica
+### 📚 **Planetary Defense Academy**
+- Educational material on historical impacts
+- Environmental effects analysis
+- Response and mitigation protocols
+- Multimedia resources for scientific outreach
 
-### 🌋 **Análisis de Impacto Geológico**
-- **Modelos de Crateración:** Cálculos de diámetro de cráter basados en energía de impacto usando ecuaciones de scaling geológico
-- **Efectos Sísmicos:** Estimación de magnitud sísmica utilizando modelos de acoplamiento de energía cinética-sísmica y escalas de Gutenberg-Richter
-- **Datos de Elevación USGS:** Integración con la API de elevación del Servicio Geológico de Estados Unidos para análisis topográfico preciso
-- **Zonificación de Daños:** Cálculo de radios de devastación (5 psi, daños ligeros/moderados) con modelos de explosión nuclear equivalente
-- **Análisis de Ondas de Choque:** Simulación visual 3D de propagación de ondas sísmicas y atmosféricas desde el punto de impacto
-- **Efectos por Tipo de Terreno:** Diferenciación entre impactos oceánicos y terrestres con consideraciones geológicas específicas
-- **Estimación TNT Equivalente:** Conversión de energía cinética a megatones TNT para evaluación comparativa de destructividad
+### 🌋 **Geological Impact Analysis**
+- **Crater Formation Models:** Crater diameter calculations based on impact energy using geological scaling equations
+- **Seismic Effects:** Seismic magnitude estimation using kinetic-seismic energy coupling models and Gutenberg-Richter scales
+- **USGS Elevation Data:** Integration with the United States Geological Survey elevation API for precise topographic analysis
+- **Damage Zone Mapping:** Devastation radius calculations (5 psi, light/moderate damage) with nuclear explosion equivalent models
+- **Shock Wave Analysis:** 3D visual simulation of seismic and atmospheric wave propagation from impact point
+- **Terrain-Specific Effects:** Differentiation between oceanic and terrestrial impacts with specific geological considerations
+- **TNT Equivalent Estimation:** Kinetic energy conversion to TNT megatons for comparative destructive evaluation
 
-## 🚀 Instalación y Configuración
+## 🚀 Installation and Setup
 
-### Prerrequisitos
-- Node.js v18.0.0 o superior
-- npm o yarn
+### Prerequisites
+- Node.js v18.0.0 or higher
+- npm or yarn
 - Git
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 ```bash
 git clone <repository-url>
 cd meteor-madness-impactor-2025
 ```
 
-### 2. Instalar dependencias
+### 2. Install dependencies
 ```bash
 npm install --legacy-peer-deps
 ```
 
-### 3. Configurar variables de entorno (opcional)
+### 3. Configure environment variables (optional)
 ```bash
-# Crear archivo .env en la raíz del proyecto
-NASA_API_KEY=tu_api_key_aqui  # Opcional, se usa DEMO_KEY por defecto
+# Create .env file in project root
+NASA_API_KEY=your_api_key_here  # Optional, uses DEMO_KEY by default
 ```
 
-### 4. Iniciar el servidor de desarrollo
+### 4. Start development server
 ```bash
-# Opción 1: Solo frontend (recomendado para desarrollo)
+# Option 1: Frontend only (recommended for development)
 npm run dev
 
-# Opción 2: Con Netlify Dev (incluye funciones serverless)
+# Option 2: With Netlify Dev (includes serverless functions)
 netlify dev --port 8888
 ```
 
-### 5. Acceder a la aplicación
+### 5. Access the application
 - **Frontend:** http://localhost:3000
 - **Netlify Dev:** http://localhost:8888
 
-## 📁 Estructura del Proyecto
+## 📁 Project Structure
 
 ```
 meteor-madness-impactor-2025/
 ├── client/                     # Frontend React/TypeScript
-│   ├── components/            # Componentes React
-│   │   ├── controls/         # Controles de simulación
-│   │   ├── layout/           # Componentes de layout
-│   │   ├── panels/           # Paneles de información
-│   │   ├── ui/               # Componentes de UI base
-│   │   └── visualizations/   # Visualizaciones 3D
-│   ├── contexts/             # Contextos React (idioma, etc.)
-│   ├── hooks/                # Hooks personalizados
-│   ├── lib/                  # Librerías y utilidades
-│   │   ├── api.ts           # Cliente API y tipos
-│   │   ├── orbits.ts        # Cálculos orbitales
-│   │   ├── physics.ts       # Modelos físicos de impacto
-│   │   └── translations.ts  # Sistema de traducciones
-│   ├── pages/                # Páginas de la aplicación
-│   └── global.css           # Estilos globales y animaciones
+│   ├── components/            # React Components
+│   │   ├── controls/         # Simulation controls
+│   │   ├── layout/           # Layout components
+│   │   ├── panels/           # Information panels
+│   │   ├── ui/               # Base UI components
+│   │   └── visualizations/   # 3D visualizations
+│   ├── contexts/             # React contexts (language, etc.)
+│   ├── hooks/                # Custom hooks
+│   ├── lib/                  # Libraries and utilities
+│   │   ├── api.ts           # API client and types
+│   │   ├── orbits.ts        # Orbital calculations
+│   │   ├── physics.ts       # Impact physics models
+│   │   └── translations.ts  # Translation system
+│   ├── pages/                # Application pages
+│   └── global.css           # Global styles and animations
 ├── netlify/
-│   └── functions/            # Funciones serverless para APIs
-├── index.html               # Punto de entrada HTML
-├── package.json             # Dependencias y scripts
-├── vite.config.ts           # Configuración de Vite
-├── tailwind.config.js       # Configuración de Tailwind CSS
-└── netlify.toml             # Configuración de Netlify
+│   └── functions/            # Serverless functions for APIs
+├── index.html               # HTML entry point
+├── package.json             # Dependencies and scripts
+├── vite.config.ts           # Vite configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+└── netlify.toml             # Netlify configuration
 ```
 
-## 🛠️ Scripts Disponibles
+## 🛠️ Available Scripts
 
-- `npm run dev` - Inicia el servidor de desarrollo
-- `npm run build` - Construye la aplicación para producción
-- `npm run preview` - Vista previa de la construcción
-- `npm run lint` - Ejecuta el linter
-- `npm run lint:fix` - Ejecuta el linter y arregla errores automáticamente
+- `npm run dev` - Start development server
+- `npm run build` - Build application for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run linter
+- `npm run lint:fix` - Run linter and fix errors automatically
 
-## 🌐 API y Fuentes de Datos
+## 🌐 APIs and Data Sources
 
-### APIs Externas
-- **NASA NEO API:** Datos de asteroides cercanos a la Tierra, órbitas y características físicas
-- **USGS Elevation API:** Datos de elevación terrestre precisos para análisis de impacto local y topográfico
+### External APIs
+- **NASA NEO API:** Near-Earth asteroid data, orbits and physical characteristics
+- **USGS Elevation API:** Precise terrestrial elevation data for local impact and topographic analysis
 
-### Funciones Serverless (Netlify Functions)
-- `/api/neo/browse` - Lista asteroides con paginación y filtrado por peligrosidad
-- `/api/neo/{id}` - Detalles específicos de un asteroide incluyendo parámetros orbitales
-- `/api/usgs/elevation` - Consulta de elevación topográfica por coordenadas geográficas
+### Serverless Functions (Netlify Functions)
+- `/api/neo/browse` - List asteroids with pagination and hazard filtering
+- `/api/neo/{id}` - Specific asteroid details including orbital parameters
+- `/api/usgs/elevation` - Topographic elevation query by geographic coordinates
 
-## 🎨 Tecnologías Utilizadas
+## 🎨 Technologies Used
 
 ### Frontend
 - **React 18** + TypeScript
-- **Vite** - Herramientas de construcción rápidas
-- **React Router** - Navegación
-- **TanStack Query** - Gestión de estado y cache
-- **Tailwind CSS** - Estilos utilitarios
-- **Radix UI** - Componentes accesibles
-- **Three.js** + React Three Fiber - Visualizaciones 3D
-- **Lucide React** - Iconografía
+- **Vite** - Fast build tools
+- **React Router** - Navigation
+- **TanStack Query** - State management and caching
+- **Tailwind CSS** - Utility-first styling
+- **Radix UI** - Accessible components
+- **Three.js** + React Three Fiber - 3D visualizations
+- **Lucide React** - Icons
 
 ### Backend/Serverless
-- **Netlify Functions** - Funciones serverless
-- **TypeScript** - Tipado estático
+- **Netlify Functions** - Serverless functions
+- **TypeScript** - Static typing
 
-### Desarrollo
-- **ESLint** - Linter
-- **PostCSS** - Procesamiento CSS
-- **Autoprefixer** - Prefijos CSS automáticos
+### Development
+- **ESLint** - Linting
+- **PostCSS** - CSS processing
+- **Autoprefixer** - Automatic CSS prefixes
 
-## 🌍 Soporte de Idiomas
+## 🌍 Language Support
 
-La aplicación cuenta con soporte completo para:
-- **Español** (por defecto)
-- **Inglés**
+The application features full support for:
+- **Spanish** (default)
+- **English**
 
-El cambio de idioma se realiza mediante el selector en la esquina superior derecha de la aplicación.
+Language switching is done through the selector in the upper right corner of the application.
 
-## 📊 Características Técnicas
+## 📊 Technical Features
 
-### Visualización 3D
-- Simulación del sistema solar con órbitas planetarias reales
-- Representación de trayectorias de asteroides con precisión temporal
-- Efectos visuales de impacto y deflección en tiempo real
-- Controles de cámara interactivos y escalado temporal dinámico
+### 3D Visualization
+- Solar system simulation with real planetary orbits
+- Asteroid trajectory representation with temporal precision
+- Real-time impact and deflection visual effects
+- Interactive camera controls and dynamic temporal scaling
 
-### Modelos Físicos y Geológicos
-- **Energía Cinética:** Cálculos precisos de energía de impacto basados en masa, velocidad y densidad del asteroide
-- **Crateración:** Modelos de scaling para estimación de diámetro de cráter usando la ecuación D ≈ 1.8 * (E/10^15)^0.22
-- **Efectos Sísmicos:** Análisis de magnitud sísmica con modelos de acoplamiento energético y escalas Gutenberg-Richter
-- **Ondas de Sobrepresión:** Cálculos de radios de daño atmosférico usando modelos de explosión nuclear (5 psi, daño ligero)
-- **Análisis Topográfico:** Integración de datos USGS para consideración de efectos locales del terreno
+### Physical and Geological Models
+- **Kinetic Energy:** Precise impact energy calculations based on asteroid mass, velocity and density
+- **Crater Formation:** Scaling models for crater diameter estimation using equation D ≈ 1.8 * (E/10^15)^0.22
+- **Seismic Effects:** Seismic magnitude analysis with energy coupling models and Gutenberg-Richter scales
+- **Overpressure Waves:** Atmospheric damage radius calculations using nuclear explosion models (5 psi, light damage)
+- **Topographic Analysis:** USGS data integration for local terrain effects consideration
 
-### Datos en Tiempo Real
-- Conexión con APIs oficiales de NASA y USGS
-- Cache inteligente para mejor rendimiento y disponibilidad offline
-- Fallbacks automáticos para garantizar funcionamiento continuo
+### Real-Time Data
+- Connection to official NASA and USGS APIs
+- Intelligent caching for better performance and offline availability
+- Automatic fallbacks to ensure continuous operation
 
-## 🔧 Configuración para Producción
+## 🔧 Production Configuration
 
 ### Build
 ```bash
 npm run build
 ```
 
-### Deploy en Netlify
-1. Conectar el repositorio a Netlify
-2. Configurar build command: `npm run build`
-3. Configurar publish directory: `dist`
-4. Agregar variables de entorno si es necesario
+### Deploy on Netlify
+1. Connect repository to Netlify
+2. Set build command: `npm run build`
+3. Set publish directory: `dist`
+4. Add environment variables if needed
 
-### Variables de Entorno
+### Environment Variables
 ```
-NASA_API_KEY=tu_api_key_de_nasa
+NASA_API_KEY=your_nasa_api_key
 ```
 
-## 📋 Funcionalidades por Página
+## 📋 Features by Page
 
-### 🏠 **Inicio**
-- Dashboard principal con métricas del sistema
-- Enlaces rápidos a todos los módulos
-- Estado actual del monitoreo
-- Arquitectura operativa
+### 🏠 **Home**
+- Main dashboard with system metrics
+- Quick links to all modules
+- Current monitoring status
+- Operational architecture
 
-### 🪐 **Asteroides**
-- Catálogo completo de NEOs
-- Filtros avanzados por peligrosidad y tamaño
-- Enlaces directos a simulación y centro de misión
-- Información detallada de cada objeto
+### 🪐 **Asteroids**
+- Complete NEO catalog
+- Advanced filters by hazard and size
+- Direct links to simulation and mission center
+- Detailed information for each object
 
-### 🌍 **Simulación Orbital**
-- Visualización 3D del sistema solar con posiciones planetarias precisas
-- Controles de tiempo y escala para análisis temporal detallado
-- Simulación de deflección de asteroides con múltiples estrategias
-- Panel de métricas en tiempo real con cálculos de impacto geológico
-- Modelado de efectos sísmicos y crateración local
+### 🌍 **Orbital Simulation**
+- 3D solar system visualization with precise planetary positions
+- Time and scale controls for detailed temporal analysis
+- Asteroid deflection simulation with multiple strategies
+- Real-time metrics panel with geological impact calculations
+- Local seismic effects and crater formation modeling
 
-### 🛰️ **Centro de Misión**
-- Selección de escenarios operativos
-- Evaluación de herramientas de mitigación
-- Cálculo de probabilidades de éxito
-- Generación de reportes ejecutivos
+### 🛰️ **Mission Center**
+- Operational scenario selection
+- Mitigation tool evaluation
+- Success probability calculations
+- Executive report generation
 
-### 📚 **Academia**
-- Material educativo estructurado
-- Análisis de casos históricos
-- Protocolos y procedimientos
-- Recursos para divulgación
+### 📚 **Academy**
+- Structured educational material
+- Historical case analysis
+- Protocols and procedures
+- Outreach resources
 
-## 🤝 Contribución
+### ⚠️ **Impacts**
+- Geological and environmental impact analysis
+- Crater formation and seismic effects modeling
+- Local terrain considerations with USGS elevation data
+- 3D visualization of shock wave propagation
 
-Para contribuir al proyecto:
+## 🤝 Contributing
 
-1. Fork el repositorio
-2. Crea una rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit tus cambios (`git commit -am 'Agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
+To contribute to the project:
 
-## 📄 Licencia
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-functionality`)
+3. Commit your changes (`git commit -am 'Add new functionality'`)
+4. Push to the branch (`git push origin feature/new-functionality`)
+5. Create Pull Request
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+## 📄 License
 
-## 🌟 Créditos
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
 
-- **Code Nebula Team** - Desarrollo principal
-- **NASA** - Datos de asteroides y APIs públicas
-- **USGS** - Datos de elevación terrestre
-- **Three.js Community** - Herramientas de visualización 3D
+## 🌟 Credits
+
+- **Code Nebula Team** - Main development
+- **NASA** - Asteroid data and public APIs
+- **USGS** - Terrestrial elevation data
+- **Three.js Community** - 3D visualization tools
 
 ---
 
-**Impactor-2025** es una herramienta educativa y de investigación desarrollada con fines científicos. Los cálculos de impacto, modelos de crateración, efectos sísmicos y simulaciones geológicas son aproximaciones basadas en modelos simplificados y no deben usarse para toma de decisiones reales de defensa planetaria o evaluación de riesgos geológicos.
+**Impactor-2025** is an educational and research tool developed for scientific purposes. Impact calculations, crater formation models, seismic effects, and geological simulations are approximations based on simplified models and should not be used for real planetary defense decision-making or geological risk assessment.
 
-🚀 **¡Defiende la Tierra con ciencia y tecnología!** 🌍
+🚀 **Defend Earth with science and technology!** 🌍
