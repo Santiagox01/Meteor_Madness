@@ -326,6 +326,24 @@ export function sceneUnitsToAU(distanceSceneUnits: number): number {
 }
 
 /**
+ * Interfaz para datos de fecha de aproximación organizados
+ */
+export interface ApproachDateInfo {
+  /** Fecha de aproximación como ISO string */
+  dateString: string;
+  /** Timestamp en segundos */
+  timestamp: number;
+  /** Fecha formateada para mostrar al usuario */
+  displayDate: string;
+  /** Tiempo hasta la aproximación en segundos */
+  timeUntil: number;
+  /** Indica si la aproximación es en el pasado */
+  isPast: boolean;
+  /** Precisión de la fecha (estimada, calculada, observada) */
+  precision: 'estimated' | 'calculated' | 'observed';
+}
+
+/**
  * Calcula la trayectoria de un meteorito teniendo en cuenta el día de aproximación
  * @param approachDate - Fecha de aproximación en formato ISO string o timestamp
  * @param currentTime - Tiempo actual en segundos UTC
@@ -339,6 +357,112 @@ export interface TrajectoryData {
   timeToApproach: number;
   relativeVelocity: number;
   impactProbability: number;
+  approachInfo: ApproachDateInfo;
+}
+
+/**
+ * Organiza la información de fecha de aproximación de un meteorito
+ * @param approachDate - Fecha de aproximación en formato ISO string o timestamp
+ * @param currentTime - Tiempo actual en segundos UTC
+ * @param precision - Precisión de la fecha
+ * @returns Información organizada de la fecha de aproximación
+ */
+export function organizeApproachDate(
+  approachDate: string | number,
+  currentTime: number,
+  precision: 'estimated' | 'calculated' | 'observed' = 'calculated'
+): ApproachDateInfo {
+  // Convertir fecha de aproximación a timestamp si es string
+  const approachTime = typeof approachDate === 'string' 
+    ? new Date(approachDate).getTime() / 1000
+    : approachDate;
+  
+  const originalDateString = typeof approachDate === 'string' 
+    ? approachDate 
+    : new Date(approachDate * 1000).toISOString();
+  
+  // Calcular tiempo hasta la aproximación
+  const timeUntil = approachTime - currentTime;
+  const isPast = timeUntil < 0;
+  
+  // Formatear fecha para mostrar
+  const approachDateObj = new Date(approachTime * 1000);
+  const displayDate = approachDateObj.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+  
+  return {
+    dateString: originalDateString,
+    timestamp: approachTime,
+    displayDate,
+    timeUntil,
+    isPast,
+    precision
+  };
+}
+
+/**
+ * Formatea el tiempo restante hasta la aproximación de forma legible
+ * @param timeUntil - Tiempo en segundos hasta la aproximación
+ * @returns Texto formateado del tiempo restante
+ */
+export function formatTimeUntilApproach(timeUntil: number): string {
+  const absoluteTime = Math.abs(timeUntil);
+  const days = Math.floor(absoluteTime / (24 * 3600));
+  const hours = Math.floor((absoluteTime % (24 * 3600)) / 3600);
+  const minutes = Math.floor((absoluteTime % 3600) / 60);
+  
+  const isPast = timeUntil < 0;
+  const prefix = isPast ? 'Hace ' : 'En ';
+  
+  if (days > 0) {
+    return `${prefix}${days} días${hours > 0 ? ` ${hours} horas` : ''}`;
+  } else if (hours > 0) {
+    return `${prefix}${hours} horas${minutes > 0 ? ` ${minutes} minutos` : ''}`;
+  } else if (minutes > 0) {
+    return `${prefix}${minutes} minutos`;
+  } else {
+    return isPast ? 'Aproximación pasada' : 'Aproximación inminente';
+  }
+}
+
+/**
+ * Calcula el nivel de riesgo basado en la fecha de aproximación
+ * @param approachInfo - Información de la fecha de aproximación
+ * @param distanceKm - Distancia mínima en kilómetros
+ * @returns Nivel de riesgo ('low', 'medium', 'high', 'critical')
+ */
+export function calculateApproachRiskLevel(
+  approachInfo: ApproachDateInfo, 
+  distanceKm: number
+): 'low' | 'medium' | 'high' | 'critical' {
+  // Si ya pasó la aproximación, el riesgo es bajo
+  if (approachInfo.isPast) return 'low';
+  
+  const daysUntil = approachInfo.timeUntil / (24 * 3600);
+  const earthRadius = 6371; // km
+  
+  // Riesgo crítico: menos de 30 días y muy cerca
+  if (daysUntil < 30 && distanceKm < earthRadius * 2) {
+    return 'critical';
+  }
+  
+  // Riesgo alto: menos de 90 días y relativamente cerca
+  if (daysUntil < 90 && distanceKm < earthRadius * 5) {
+    return 'high';
+  }
+  
+  // Riesgo medio: menos de 365 días
+  if (daysUntil < 365) {
+    return 'medium';
+  }
+  
+  return 'low';
 }
 
 export function calculateMeteoriteTrajectory(
@@ -346,10 +470,9 @@ export function calculateMeteoriteTrajectory(
   currentTime: number,
   elements: OrbitalElements
 ): TrajectoryData {
-  // Convertir fecha de aproximación a timestamp si es string
-  const approachTime = typeof approachDate === 'string' 
-    ? new Date(approachDate).getTime() / 1000
-    : approachDate;
+  // Organizar información de fecha de aproximación
+  const approachInfo = organizeApproachDate(approachDate, currentTime);
+  const approachTime = approachInfo.timestamp;
   
   // Calcular posición actual del meteorito
   const currentPos = getOrbitalPosition(elements, currentTime);
@@ -387,7 +510,8 @@ export function calculateMeteoriteTrajectory(
     distanceToEarth: distanceToEarthKm,
     timeToApproach,
     relativeVelocity,
-    impactProbability
+    impactProbability,
+    approachInfo
   };
 }
 
@@ -430,6 +554,51 @@ export function generateTrajectoryPoints(
   }
   
   return points;
+}
+
+/**
+ * Obtiene la próxima fecha de aproximación futura de los datos de la API
+ * @param closeApproachData - Array de datos de aproximación de la API de NASA
+ * @returns La próxima aproximación futura o la más reciente si no hay futuras
+ */
+export function getNextApproachData(closeApproachData?: Array<any>) {
+  if (!closeApproachData || closeApproachData.length === 0) {
+    return null;
+  }
+
+  const currentTime = Date.now();
+
+  // Buscar la primera aproximación futura
+  const futureApproaches = closeApproachData.filter(approach => {
+    const approachTime = new Date(approach.close_approach_date).getTime();
+    return approachTime > currentTime;
+  });
+
+  // Si hay aproximaciones futuras, devolver la más cercana
+  if (futureApproaches.length > 0) {
+    return futureApproaches.sort((a, b) => {
+      const timeA = new Date(a.close_approach_date).getTime();
+      const timeB = new Date(b.close_approach_date).getTime();
+      return timeA - timeB;
+    })[0];
+  }
+
+  // Si no hay aproximaciones futuras, devolver la más reciente del pasado
+  const pastApproaches = closeApproachData.filter(approach => {
+    const approachTime = new Date(approach.close_approach_date).getTime();
+    return approachTime <= currentTime;
+  });
+
+  if (pastApproaches.length > 0) {
+    return pastApproaches.sort((a, b) => {
+      const timeA = new Date(a.close_approach_date).getTime();
+      const timeB = new Date(b.close_approach_date).getTime();
+      return timeB - timeA; // Más reciente primero
+    })[0];
+  }
+
+  // Fallback: devolver el primer elemento
+  return closeApproachData[0];
 }
 
 /**

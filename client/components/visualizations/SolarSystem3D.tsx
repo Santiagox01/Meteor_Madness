@@ -13,7 +13,9 @@ import {
   NASADataService,
   calculateMeteoriteTrajectory,
   generateTrajectoryPoints,
-  type TrajectoryData
+  type TrajectoryData,
+  organizeApproachDate,
+  formatTimeUntilApproach
 } from "@/lib/orbits";
 
 export interface SolarSystem3DProps {
@@ -327,7 +329,8 @@ function AsteroidOrbit({ elements, deflected }: { elements: OrbitalElements; def
   );
 }
 
-// Añadir visualización de trayectoria basada en fecha de aproximación
+
+// Componente mejorado de trayectoria con organización de fechas
 function TrajectoryPath({ elements, approachDate, currentTime }: { 
   elements: OrbitalElements; 
   approachDate?: string; 
@@ -336,9 +339,16 @@ function TrajectoryPath({ elements, approachDate, currentTime }: {
   const trajectoryPoints = useMemo(() => {
     if (!approachDate || !elements) return [];
     
-    const approachTime = new Date(approachDate).getTime() / 1000;
-    const startTime = Math.min(currentTime, approachTime - 86400 * 30); // 30 días antes
-    const endTime = Math.max(currentTime, approachTime + 86400 * 7); // 7 días después
+    const approachInfo = organizeApproachDate(approachDate, currentTime);
+    const approachTime = approachInfo.timestamp;
+    
+    // Calcular rango de tiempo para la trayectoria
+    const timeRange = Math.abs(approachInfo.timeUntil);
+    const startOffset = Math.min(timeRange * 0.3, 86400 * 30); // Máximo 30 días
+    const endOffset = Math.min(timeRange * 0.1, 86400 * 7);   // Máximo 7 días
+    
+    const startTime = Math.min(currentTime, approachTime - startOffset);
+    const endTime = Math.max(currentTime, approachTime + endOffset);
     
     return generateTrajectoryPoints(elements, startTime, endTime, 50);
   }, [elements, approachDate, currentTime]);
@@ -422,19 +432,55 @@ function Asteroid({ elements, deflected, simTimeSec, speedFactor, approachDate }
         />
       </mesh>
       
-      {/* Mostrar información de trayectoria si está disponible */}
-      {trajectoryData && trajectoryData.impactProbability > 0.1 && (
-        <Text
-          position={[ref.current?.position.x + 0.5 || 0, ref.current?.position.y + 0.5 || 0, ref.current?.position.z || 0]}
-          fontSize={0.08}
-          color={trajectoryData.impactProbability > 0.5 ? "#ef4444" : "#f59e0b"}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.01}
-          outlineColor="black"
-        >
-          {`Prob: ${(trajectoryData.impactProbability * 100).toFixed(2)}%`}
-        </Text>
+      {/* Mostrar información de aproximación mejorada */}
+      {trajectoryData && approachDate && (
+        <group>
+          {/* Línea de aproximación más cercana */}
+          {trajectoryData.impactProbability > 0.01 && (
+            <line>
+              <bufferGeometry attach="geometry" ref={ref => {
+                if (ref) {
+                  const points = [
+                    trajectoryData.currentPosition,
+                    trajectoryData.approachPosition
+                  ];
+                  ref.setFromPoints(points);
+                }
+              }} />
+              <lineBasicMaterial 
+                color={trajectoryData.impactProbability > 0.5 ? "#ef4444" : "#f59e0b"} 
+                transparent 
+                opacity={0.8}
+                linewidth={2}
+              />
+            </line>
+          )}
+          
+          {/* Información de trayectoria con mejor organización */}
+          <Text
+            position={[ref.current?.position.x + 0.5 || 0, ref.current?.position.y + 0.8 || 0, ref.current?.position.z || 0]}
+            fontSize={0.08}
+            color={trajectoryData.impactProbability > 0.1 ? "#ef4444" : "#22c55e"}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.01}
+            outlineColor="black"
+          >
+            {`Dist: ${(trajectoryData.distanceToEarth / 1000).toFixed(1)}k km`}
+          </Text>
+          
+          <Text
+            position={[ref.current?.position.x + 0.5 || 0, ref.current?.position.y + 0.6 || 0, ref.current?.position.z || 0]}
+            fontSize={0.07}
+            color={trajectoryData.impactProbability > 0.1 ? "#ef4444" : "#f59e0b"}
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.01}
+            outlineColor="black"
+          >
+            {formatTimeUntilApproach(trajectoryData.approachInfo.timeUntil)}
+          </Text>
+        </group>
       )}
     </>
   );

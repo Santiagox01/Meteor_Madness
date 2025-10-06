@@ -184,3 +184,20 @@
 .glow-text {
   text-shadow: 0 0 18px hsla(144, 73%, 56%, 0.45);
 }
+
+/* Text clamp utilities for better mobile text handling */
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
