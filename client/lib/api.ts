@@ -1,6 +1,6 @@
 import { NEO_BROWSE_SAMPLE } from "@/lib/samples";
 
-const DEFAULT_TIMEOUT = 7000;
+const DEFAULT_TIMEOUT = 10000; // Increased to 10 seconds for better reliability
 
 // Type definitions
 export interface NEO {
@@ -89,13 +89,32 @@ async function withTimeout(resource: RequestInfo | URL, options: RequestInit & {
 
 async function requestJson<T>(url: string, fallback: T, options?: RequestInit & { timeoutMs?: number }) {
   try {
-    const response = await withTimeout(url, { ...options });
+    const response = await withTimeout(url, { 
+      ...options,
+      headers: {
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
+        ...options?.headers
+      }
+    });
+    
     if (!response?.ok) {
+      console.warn(`[api] HTTP ${response.status} for ${url}, using fallback data`);
       return fallback;
     }
-    return (await response.json()) as T;
+    
+    const data = await response.json();
+    
+    // Validate and normalize the response data
+    if (data && typeof data === 'object') {
+      return data as T;
+    } else {
+      console.warn(`[api] Invalid response format from ${url}, using fallback data`);
+      return fallback;
+    }
   } catch (error) {
-    console.warn(`[api] Falling back to cached data for ${url}`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`[api] Request failed for ${url}: ${errorMessage}, using fallback data`);
     return fallback;
   }
 }

@@ -40,8 +40,16 @@ export default function Asteroids() {
     { value: "large", label: t.largeSize },
   ];
 
-  const { data } = useQuery({ queryKey: ["neo-browse", "asteroids"], queryFn: () => fetchNeoBrowse(0, 40), retry: 0 });
-  const neos: NeoObject[] = data?.near_earth_objects ?? [];
+  const { data, isError, isLoading } = useQuery({ 
+    queryKey: ["neo-browse", "asteroids"], 
+    queryFn: () => fetchNeoBrowse(0, 40), 
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+  
+  const neos: NeoObject[] = (data as any)?.near_earth_objects ?? [];
 
   const filtered = useMemo(() => {
     return neos.filter((neo) => {
@@ -99,24 +107,66 @@ export default function Asteroids() {
       </section>
 
       <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((neo) => {
+        {isLoading && (
+          <div className="col-span-full text-center py-12">
+            <div className="inline-flex items-center gap-2 text-primary">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              {'Cargando asteroides...'}
+            </div>
+          </div>
+        )}
+        
+        {isError && (
+          <div className="col-span-full text-center py-12 text-muted-foreground">
+            <ShieldAlert className="h-12 w-12 mx-auto mb-4 opacity-50 text-yellow-500" />
+            <p className="mb-2">{'Error al cargar datos'}</p>
+            <p className="text-sm">{'Usando datos de ejemplo'}</p>
+          </div>
+        )}
+        
+        {!isLoading && filtered.map((neo) => {
           const est = neo.estimated_diameter?.meters;
           const avgSizeKm = est ? ((est.estimated_diameter_max ?? 0) + (est.estimated_diameter_min ?? 0)) / 2 / 1000 : 0;
           
-          // Obtener la próxima aproximación futura en lugar de la primera histórica
+          // Obtener la próxima aproximación futura en lugar de la primera histórica con mejor validación
           const approach = getNextApproachData(neo.close_approach_data);
-          const velocity = approach?.relative_velocity?.kilometers_per_second ? parseFloat(approach.relative_velocity.kilometers_per_second) : 0;
-          const distance = distanceMetric === "lunar" 
-            ? approach?.miss_distance?.lunar ? parseFloat(approach.miss_distance.lunar) : 0
-            : approach?.miss_distance?.kilometers ? parseFloat(approach.miss_distance.kilometers) / 1000000 : 0;
           
-          // Calcular nivel de riesgo
-          const approachInfo = approach?.close_approach_date 
-            ? organizeApproachDate(approach.close_approach_date, Date.now() / 1000)
-            : null;
-          const riskLevel = approachInfo && distance 
-            ? calculateApproachRiskLevel(approachInfo, distance * (distanceMetric === "lunar" ? 384400 : 1000000))
-            : 'low';
+          // Validar y obtener datos de velocidad con fallbacks
+          let velocity = 0;
+          if (approach?.relative_velocity?.kilometers_per_second) {
+            const velocityValue = parseFloat(approach.relative_velocity.kilometers_per_second);
+            velocity = !isNaN(velocityValue) ? velocityValue : 0;
+          }
+          
+          // Validar y obtener datos de distancia con fallbacks
+          let distance = 0;
+          if (approach?.miss_distance) {
+            if (distanceMetric === "lunar" && approach.miss_distance.lunar) {
+              const distanceValue = parseFloat(approach.miss_distance.lunar);
+              distance = !isNaN(distanceValue) ? distanceValue : 0;
+            } else if (distanceMetric === "kilometers" && approach.miss_distance.kilometers) {
+              const distanceValue = parseFloat(approach.miss_distance.kilometers);
+              distance = !isNaN(distanceValue) ? distanceValue / 1000000 : 0;
+            }
+          }
+          
+          // Calcular nivel de riesgo solo si tenemos datos válidos
+          let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
+          let approachInfo = null;
+          
+          if (approach?.close_approach_date) {
+            try {
+              approachInfo = organizeApproachDate(approach.close_approach_date, Date.now() / 1000);
+              if (distance > 0) {
+                riskLevel = calculateApproachRiskLevel(
+                  approachInfo, 
+                  distance * (distanceMetric === "lunar" ? 384400 : 1000000)
+                );
+              }
+            } catch (error) {
+              console.warn('Error calculating approach info for', neo.name, error);
+            }
+          }
           
           const riskColors = {
             low: 'bg-green-500/20 text-green-400 border-green-500/30',
@@ -163,10 +213,7 @@ export default function Asteroids() {
                     <div>
                       <div className="text-muted-foreground">{t.approachDate}</div>
                       <div className="font-medium text-xs">
-                        {approach?.close_approach_date 
-                          ? organizeApproachDate(approach.close_approach_date, Date.now() / 1000).displayDate.split(',')[0]
-                          : "N/A"
-                        }
+                        {approachInfo?.displayDate.split(',')[0] || "N/A"}
                       </div>
                     </div>
                   </div>
@@ -175,8 +222,8 @@ export default function Asteroids() {
                     <div>
                       <div className="text-muted-foreground">{t.timeUntil || 'Tiempo restante'}</div>
                       <div className="font-medium text-xs">
-                        {approach?.close_approach_date 
-                          ? formatTimeUntilApproach(organizeApproachDate(approach.close_approach_date, Date.now() / 1000).timeUntil)
+                        {approachInfo?.timeUntil 
+                          ? formatTimeUntilApproach(approachInfo.timeUntil)
                           : "N/A"
                         }
                       </div>
