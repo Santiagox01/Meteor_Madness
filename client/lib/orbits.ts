@@ -567,11 +567,22 @@ export function getNextApproachData(closeApproachData?: Array<any>) {
   }
 
   const currentTime = Date.now();
+  const validApproaches = closeApproachData.filter(approach => 
+    approach.close_approach_date && approach.miss_distance && approach.relative_velocity
+  );
+
+  if (validApproaches.length === 0) {
+    return null;
+  }
 
   // Buscar la primera aproximación futura
-  const futureApproaches = closeApproachData.filter(approach => {
-    const approachTime = new Date(approach.close_approach_date).getTime();
-    return approachTime > currentTime;
+  const futureApproaches = validApproaches.filter(approach => {
+    try {
+      const approachTime = new Date(approach.close_approach_date).getTime();
+      return !isNaN(approachTime) && approachTime > currentTime;
+    } catch {
+      return false;
+    }
   });
 
   // Si hay aproximaciones futuras, devolver la más cercana
@@ -584,9 +595,13 @@ export function getNextApproachData(closeApproachData?: Array<any>) {
   }
 
   // Si no hay aproximaciones futuras, devolver la más reciente del pasado
-  const pastApproaches = closeApproachData.filter(approach => {
-    const approachTime = new Date(approach.close_approach_date).getTime();
-    return approachTime <= currentTime;
+  const pastApproaches = validApproaches.filter(approach => {
+    try {
+      const approachTime = new Date(approach.close_approach_date).getTime();
+      return !isNaN(approachTime) && approachTime <= currentTime;
+    } catch {
+      return false;
+    }
   });
 
   if (pastApproaches.length > 0) {
@@ -597,8 +612,8 @@ export function getNextApproachData(closeApproachData?: Array<any>) {
     })[0];
   }
 
-  // Fallback: devolver el primer elemento
-  return closeApproachData[0];
+  // Fallback: devolver el primer elemento válido
+  return validApproaches[0];
 }
 
 /**
