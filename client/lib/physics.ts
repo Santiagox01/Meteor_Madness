@@ -13,6 +13,18 @@ export interface SimulationResult {
   lightDamageRadiusKm: number;
   estSeismicMagnitude: number;
   torinoScale: number;
+  thermodynamics?: ThermodynamicsResult;
+}
+
+export interface ThermodynamicsResult {
+  totalEnergyConserved: number;
+  heatEnergyJ: number;
+  expansionWorkJ: number;
+  seismicEnergyJ: number;
+  ejectaEnergyJ: number;
+  temperatureIncrease: number;
+  entropyIncrease: number;
+  heatTransferRate: number;
 }
 
 export function toRadians(deg: number) {
@@ -83,6 +95,107 @@ export function torinoScaleFromEnergyMt(Y_mt: number) {
   return 10;
 }
 
+/**
+ * Primera Ley de la Termodinámica: Cálculo de conservación de energía
+ * Analiza cómo la energía cinética del asteroide se transforma en diferentes formas
+ */
+export function calculateEnergyConservation(kineticEnergyJ: number): ThermodynamicsResult {
+  // Fracciones de energía basadas en estudios de impactos (aproximaciones)
+  const heatFraction = 0.65; // ~65% se convierte en calor
+  const expansionFraction = 0.20; // ~20% trabajo de expansión (ondas de choque)
+  const seismicFraction = 0.10; // ~10% ondas sísmicas
+  const ejectaFraction = 0.05; // ~5% eyección de material
+
+  const heatEnergyJ = kineticEnergyJ * heatFraction;
+  const expansionWorkJ = kineticEnergyJ * expansionFraction;
+  const seismicEnergyJ = kineticEnergyJ * seismicFraction;
+  const ejectaEnergyJ = kineticEnergyJ * ejectaFraction;
+
+  // Verificación de conservación de energía (Primera Ley)
+  const totalEnergyConserved = heatEnergyJ + expansionWorkJ + seismicEnergyJ + ejectaEnergyJ;
+
+  // Cálculo de incremento de temperatura (aproximación)
+  // Asumiendo que el calor se distribuye en un volumen esférico
+  const temperatureIncrease = calculateTemperatureIncrease(heatEnergyJ);
+
+  // Cálculo de incremento de entropía (transformación irreversible)
+  const entropyIncrease = calculateEntropyIncrease(heatEnergyJ, temperatureIncrease);
+
+  // Tasa de transferencia de calor (W/m²)
+  const heatTransferRate = calculateHeatTransferRate(heatEnergyJ, temperatureIncrease);
+
+  return {
+    totalEnergyConserved,
+    heatEnergyJ,
+    expansionWorkJ,
+    seismicEnergyJ,
+    ejectaEnergyJ,
+    temperatureIncrease,
+    entropyIncrease,
+    heatTransferRate,
+  };
+}
+
+/**
+ * Cálculo de incremento de temperatura por transferencia de calor
+ * ΔT = Q / (m * c_p) donde Q es calor, m es masa, c_p es calor específico
+ */
+export function calculateTemperatureIncrease(heatEnergyJ: number): number {
+  // Aproximaciones para material rocoso/atmosférico
+  const affectedMass = 1e12; // kg (masa aproximada de material afectado)
+  const specificHeat = 800; // J/(kg·K) (calor específico promedio)
+  
+  return heatEnergyJ / (affectedMass * specificHeat);
+}
+
+/**
+ * Cálculo de incremento de entropía
+ * ΔS = Q/T (para procesos irreversibles)
+ */
+export function calculateEntropyIncrease(heatEnergyJ: number, temperatureK: number): number {
+  const baseTemperature = 288; // K (temperatura base de la Tierra ~15°C)
+  const avgTemperature = baseTemperature + temperatureK / 2;
+  
+  return heatEnergyJ / avgTemperature;
+}
+
+/**
+ * Cálculo de tasa de transferencia de calor
+ * q = h * A * ΔT donde h es coeficiente de transferencia, A es área
+ */
+export function calculateHeatTransferRate(heatEnergyJ: number, temperatureDiff: number): number {
+  const heatTransferCoeff = 25; // W/(m²·K) (coeficiente aproximado)
+  const impactArea = Math.PI * Math.pow(1000, 2); // m² (área de impacto ~1km radio)
+  const timeFrame = 3600; // s (1 hora)
+  
+  // Potencia térmica promedio considerando diferencia de temperatura
+  const thermalPower = heatEnergyJ / timeFrame;
+  const baseHeatFlux = thermalPower / impactArea;
+  
+  // Ajustar por diferencia de temperatura (factor de transferencia)
+  const temperatureFactor = Math.max(0.1, temperatureDiff / 1000); // Normalizado
+  
+  return baseHeatFlux * (1 + temperatureFactor * heatTransferCoeff / 100);
+}
+
+/**
+ * Balance de energía total del sistema
+ * Verifica que la suma de todas las formas de energía igual la energía inicial
+ */
+export function validateEnergyBalance(
+  initialKineticEnergy: number,
+  thermodynamicsResult: ThermodynamicsResult
+): { isBalanced: boolean; errorPercentage: number } {
+  const totalTransformed = thermodynamicsResult.totalEnergyConserved;
+  const difference = Math.abs(initialKineticEnergy - totalTransformed);
+  const errorPercentage = (difference / initialKineticEnergy) * 100;
+  
+  // Considerar balanceado si el error es menor al 1%
+  const isBalanced = errorPercentage < 1.0;
+  
+  return { isBalanced, errorPercentage };
+}
+
 export function runImpactModel(params: AsteroidParams): SimulationResult {
   const massKg = computeMassKg(params.diameterKilometers, params.densityKgM3);
   const E = kineticEnergyJ(massKg, params.velocityKmS);
@@ -92,6 +205,10 @@ export function runImpactModel(params: AsteroidParams): SimulationResult {
   const lightDamageRadiusKmVal = computeLightDamageRadiusKm(Y_mt);
   const estSeismicMagnitude = estimateSeismicMagnitude(E);
   const torinoScale = torinoScaleFromEnergyMt(Y_mt);
+  
+  // Cálculos termodinámicos
+  const thermodynamics = calculateEnergyConservation(E);
+  
   return {
     outcome: "impact",
     successProbability: 1.0,
@@ -104,6 +221,7 @@ export function runImpactModel(params: AsteroidParams): SimulationResult {
     lightDamageRadiusKm: lightDamageRadiusKmVal,
     estSeismicMagnitude,
     torinoScale,
+    thermodynamics,
   };
 }
 

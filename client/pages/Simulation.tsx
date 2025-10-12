@@ -181,8 +181,8 @@ export default function Simulation() {
     retry: 0,
   });
 
-  const metrics = useMemo(
-    () => [
+  const metrics = useMemo(() => {
+    const baseMetrics = [
       { label: t.energy, value: `${(impact.kineticEnergyJ / 1e18).toFixed(2)} ${t.exajoules}` },
       { label: t.yield, value: `${impact.tntMegatons.toFixed(2)} ${t.megatons}` },
       { label: t.crater, value: `${impact.craterDiameterKm.toFixed(2)} ${t.km}` },
@@ -191,9 +191,47 @@ export default function Simulation() {
       { label: t.seismicMagnitude, value: `${impact.estSeismicMagnitude.toFixed(2)}` },
       { label: t.mass, value: `${(impact.massKg / 1e9).toFixed(2)} ${t.gigatons}` },
       { label: t.torinoScale, value: `${impact.torinoScale} / 10` },
-    ],
-    [impact, t],
-  );
+    ];
+
+    // Agregar métricas termodinámicas si están disponibles
+    if (impact.thermodynamics) {
+      const thermoMetrics = [
+        { 
+          label: t.language === 'es' ? 'Energía Térmica' : 'Heat Energy', 
+          value: `${(impact.thermodynamics.heatEnergyJ / 1e18).toFixed(2)} EJ`,
+          hint: t.language === 'es' ? '65% de energía total' : '65% of total energy'
+        },
+        { 
+          label: t.language === 'es' ? 'Trabajo Expansión' : 'Expansion Work', 
+          value: `${(impact.thermodynamics.expansionWorkJ / 1e18).toFixed(2)} EJ`,
+          hint: t.language === 'es' ? 'Ondas de choque' : 'Shock waves'
+        },
+        { 
+          label: t.language === 'es' ? 'Energía Sísmica' : 'Seismic Energy', 
+          value: `${(impact.thermodynamics.seismicEnergyJ / 1e18).toFixed(2)} EJ`,
+          hint: t.language === 'es' ? 'Ondas terrestres' : 'Ground waves'
+        },
+        { 
+          label: t.language === 'es' ? 'Inc. Temperatura' : 'Temp. Increase', 
+          value: `${impact.thermodynamics.temperatureIncrease.toFixed(0)} K`,
+          hint: t.language === 'es' ? 'Incremento local' : 'Local increase'
+        },
+        { 
+          label: t.language === 'es' ? 'Inc. Entropía' : 'Entropy Increase', 
+          value: `${(impact.thermodynamics.entropyIncrease / 1e21).toFixed(2)} ZJ/K`,
+          hint: t.language === 'es' ? 'Proceso irreversible' : 'Irreversible process'
+        },
+        { 
+          label: t.language === 'es' ? 'Flujo Térmico' : 'Heat Transfer', 
+          value: `${(impact.thermodynamics.heatTransferRate / 1e6).toFixed(2)} MW/m²`,
+          hint: t.language === 'es' ? 'Tasa de transferencia' : 'Transfer rate'
+        },
+      ];
+      return [...baseMetrics, ...thermoMetrics];
+    }
+    
+    return baseMetrics;
+  }, [impact, t]);
 
   const telemetryCards: TelemetryCardSpec[] = [
     {
