@@ -157,6 +157,30 @@ export default function Simulation() {
   }, [goToImpactSignal, showDeflection, deflectionOutcome.avoidsImpact]);
 
   const telemetry = useMemo(() => {
+    // Use real asteroid data if available, otherwise fall back to calculated positions
+    if (neoData && neoData.close_approach_data && neoData.close_approach_data.length > 0) {
+      const nextApproach = getNextApproachData(neoData.close_approach_data);
+      if (nextApproach && nextApproach.miss_distance && nextApproach.relative_velocity) {
+        // Use real NASA data for telemetry
+        const realDistanceKm = parseFloat(nextApproach.miss_distance.kilometers);
+        const realDistanceLD = parseFloat(nextApproach.miss_distance.lunar);
+        const realRelativeSpeed = parseFloat(nextApproach.relative_velocity.kilometers_per_second);
+        
+        // Calculate ETA based on approach date
+        const approachTime = new Date(nextApproach.close_approach_date).getTime();
+        const currentTime = Date.now();
+        const etaHours = Math.max(0, (approachTime - currentTime) / (1000 * 60 * 60));
+        
+        return {
+          distanceKm: realDistanceKm,
+          distanceLD: realDistanceLD,
+          relativeSpeed: realRelativeSpeed,
+          etaHours,
+        };
+      }
+    }
+    
+    // Fallback to calculated asteroid position
     const asteroidScene = getAsteroidPosition(simTime, showDeflection && deflectionOutcome.avoidsImpact);
     const earthScene = getEarthPosition(simTime);
     const dx = asteroidScene.x - earthScene.x;
@@ -167,13 +191,14 @@ export default function Simulation() {
     const distanceLD = distanceKm / 384_400;
     const relativeSpeed = params.velocityKmS;
     const etaHours = distanceKm / (relativeSpeed * 3600);
+    
     return {
       distanceKm,
       distanceLD,
       relativeSpeed,
       etaHours,
     };
-  }, [simTime, params.velocityKmS, deflectionOutcome.avoidsImpact, showDeflection]);
+  }, [simTime, params.velocityKmS, deflectionOutcome.avoidsImpact, showDeflection, neoData]);
 
   const { data: elevation } = useQuery({
     queryKey: ["elevation", params.impactLat, params.impactLon],
@@ -237,19 +262,19 @@ export default function Simulation() {
     {
       title: t.asteroidEarthDistance,
       value: `${telemetry.distanceLD.toFixed(2)} ${t.lunarDistances}`,
-      sub: `${telemetry.distanceKm.toLocaleString(t.language === 'es' ? "es-ES" : "en-US", { maximumFractionDigits: 0 })} ${t.km}`,
+      sub: `${telemetry.distanceKm.toLocaleString(t.language === 'es' ? "es-ES" : "en-US", { maximumFractionDigits: 0 })} ${t.km}${neoData ? ' 📡' : ' 🔬'}`,
       icon: Orbit,
     },
     {
       title: t.relativeVelocity,
       value: `${telemetry.relativeSpeed.toFixed(2)} ${t.kmPerS}`,
-      sub: `${(telemetry.relativeSpeed * 3600).toFixed(0)} ${t.kmPerH}`,
+      sub: `${(telemetry.relativeSpeed * 3600).toFixed(0)} ${t.kmPerH}${neoData ? ' 📡' : ' 🔬'}`,
       icon: GaugeCircle,
     },
     {
       title: t.estimatedArrival,
       value: formatDuration(telemetry.etaHours, t),
-      sub: t.orbitalCrossingTime,
+      sub: neoData ? (t.language === 'es' ? 'Datos NASA reales' : 'Real NASA data') : t.orbitalCrossingTime,
       icon: Timer,
     },
     {
