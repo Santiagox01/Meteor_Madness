@@ -1,34 +1,34 @@
-# Impactor-2025 - Code Nebula 🚀
+# Impactor-2025 - Code Nebula
 
 An immersive planetary defense platform that combines advanced orbital simulation, geological impact analysis, and NEO (Near Earth Objects) mitigation strategies. Integrates NASA and USGS data to visualize heliocentric trajectories, evaluate local geological effects, and execute deflection missions with scientifically grounded physical models.
 
-## ✨ Main Features
+## Main Features
 
-### 🪐 **Real-Time NEO Catalog**
+### **Real-Time NEO Catalog**
 - Updated data from NASA NEO API
 - Filtering by hazard level, size, and minimum distance
 - Classification according to the Torino Scale
 - Detailed trajectory and approach information
 
-### 🌍 **Advanced Orbital Simulation**
+### **Advanced Orbital Simulation**
 - Real-time 3D solar system visualization
 - Asteroid deflection simulation
 - Local impact physical models
 - Adjustable time and scale controls
 
-### 🛰️ **Mission Center**
+### **Mission Center**
 - Mitigation strategy planning
 - Tool evaluation: kinetic impactor, gravity tractor, nuclear explosion
 - Success probability analysis
 - Executive reports and operational protocols
 
-### 📚 **Planetary Defense Academy**
+### **Planetary Defense Academy**
 - Educational material on historical impacts
 - Environmental effects analysis
 - Response and mitigation protocols
 - Multimedia resources for scientific outreach
 
-### 🌋 **Geological Impact Analysis**
+### **Geological Impact Analysis**
 - **Crater Formation Models:** Crater diameter calculations based on impact energy using geological scaling equations
 - **Seismic Effects:** Seismic magnitude estimation using kinetic-seismic energy coupling models and Gutenberg-Richter scales
 - **USGS Elevation Data:** Integration with the United States Geological Survey elevation API for precise topographic analysis
@@ -37,7 +37,7 @@ An immersive planetary defense platform that combines advanced orbital simulatio
 - **Terrain-Specific Effects:** Differentiation between oceanic and terrestrial impacts with specific geological considerations
 - **TNT Equivalent Estimation:** Kinetic energy conversion to TNT megatons for comparative destructive evaluation
 
-## 🚀 Installation and Setup
+## Installation and Setup
 
 ### Prerequisites
 - Node.js v18.0.0 or higher
@@ -74,9 +74,9 @@ netlify dev --port 8888
 - **Frontend:** http://localhost:3000
 - **Netlify Dev:** http://localhost:8888
 
-## 📁 Project Structure
+## Project Structure
 
-```
+```text
 meteor-madness-impactor-2025/
 ├── client/                     # Frontend React/TypeScript
 │   ├── components/            # React Components
@@ -103,7 +103,7 @@ meteor-madness-impactor-2025/
 └── netlify.toml             # Netlify configuration
 ```
 
-## 🛠️ Available Scripts
+## Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build application for production
@@ -111,7 +111,7 @@ meteor-madness-impactor-2025/
 - `npm run lint` - Run linter
 - `npm run lint:fix` - Run linter and fix errors automatically
 
-## 🌐 APIs and Data Sources
+## APIs and Data Sources
 
 ### External APIs
 - **NASA NEO API:** Near-Earth asteroid data, orbits and physical characteristics
@@ -122,7 +122,7 @@ meteor-madness-impactor-2025/
 - `/api/neo/{id}` - Specific asteroid details including orbital parameters
 - `/api/usgs/elevation` - Topographic elevation query by geographic coordinates
 
-## 🎨 Technologies Used
+## Technologies Used
 
 ### Frontend
 - **React 18** + TypeScript
@@ -143,7 +143,7 @@ meteor-madness-impactor-2025/
 - **PostCSS** - CSS processing
 - **Autoprefixer** - Automatic CSS prefixes
 
-## 🌍 Language Support
+## Language Support
 
 The application features full support for:
 - **Spanish** (default)
@@ -151,7 +151,7 @@ The application features full support for:
 
 Language switching is done through the selector in the upper right corner of the application.
 
-## 📊 Technical Features
+## Technical Features
 
 ### 3D Visualization
 - Solar system simulation with real planetary orbits
@@ -171,7 +171,7 @@ Language switching is done through the selector in the upper right corner of the
 - Intelligent caching for better performance and offline availability
 - Automatic fallbacks to ensure continuous operation
 
-## 🔧 Production Configuration
+## Production Configuration
 
 ### Build
 ```bash
@@ -185,50 +185,50 @@ npm run build
 4. Add environment variables if needed
 
 ### Environment Variables
-```
+```text
 NASA_API_KEY=your_nasa_api_key
 ```
 
-## 📋 Features by Page
+## Features by Page
 
-### 🏠 **Home**
+### **Home**
 - Main dashboard with system metrics
 - Quick links to all modules
 - Current monitoring status
 - Operational architecture
 
-### 🪐 **Asteroids**
+### **Asteroids**
 - Complete NEO catalog
 - Advanced filters by hazard and size
 - Direct links to simulation and mission center
 - Detailed information for each object
 
-### 🌍 **Orbital Simulation**
+### **Orbital Simulation**
 - 3D solar system visualization with precise planetary positions
 - Time and scale controls for detailed temporal analysis
 - Asteroid deflection simulation with multiple strategies
 - Real-time metrics panel with geological impact calculations
 - Local seismic effects and crater formation modeling
 
-### 🛰️ **Mission Center**
+### **Mission Center**
 - Operational scenario selection
 - Mitigation tool evaluation
 - Success probability calculations
 - Executive report generation
 
-### 📚 **Academy**
+### **Academy**
 - Structured educational material
 - Historical case analysis
 - Protocols and procedures
 - Outreach resources
 
-### ⚠️ **Impacts**
+### **Impacts**
 - Geological and environmental impact analysis
 - Crater formation and seismic effects modeling
 - Local terrain considerations with USGS elevation data
 - 3D visualization of shock wave propagation
 
-## 🤝 Contributing
+## Contributing
 
 To contribute to the project:
 
@@ -238,11 +238,11 @@ To contribute to the project:
 4. Push to the branch (`git push origin feature/new-functionality`)
 5. Create Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for more details.
 
-## 🌟 Credits
+## Credits
 
 - **Code Nebula Team** - Main development
 - **NASA** - Asteroid data and public APIs
@@ -253,4 +253,4 @@ This project is licensed under the MIT License. See the `LICENSE` file for more 
 
 **Impactor-2025** is an educational and research tool developed for scientific purposes. Impact calculations, crater formation models, seismic effects, and geological simulations are approximations based on simplified models and should not be used for real planetary defense decision-making or geological risk assessment.
 
-🚀 **Defend Earth with science and technology!** 🌍
+**Defend Earth with science and technology!**
